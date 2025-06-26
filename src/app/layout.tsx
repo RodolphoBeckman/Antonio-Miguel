@@ -4,7 +4,7 @@ import { AppShell } from '@/components/app-shell';
 import { Toaster } from '@/components/ui/toaster';
 
 export const metadata: Metadata = {
-  title: 'SenseScape',
+  title: 'Antonio Miguel',
   description: 'Terapia Lúdica Multissensorial para Crianças com Deficiência Visual',
 };
 

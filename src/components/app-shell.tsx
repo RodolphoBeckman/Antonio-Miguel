@@ -42,12 +42,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <Sidebar>
         <SidebarContent className="p-4 bg-background">
           <SidebarHeader className="p-0 mb-4">
-            <Link href="/" className="flex items-center gap-2" aria-label="Página inicial do SenseScape">
+            <Link href="/" className="flex items-center gap-2" aria-label="Página inicial do Antonio Miguel">
               <div className="bg-primary p-2 rounded-lg">
                 <Waves className="text-primary-foreground" />
               </div>
               <h1 className="text-xl font-bold font-headline text-foreground">
-                SenseScape
+                Antonio Miguel
               </h1>
             </Link>
           </SidebarHeader>
@@ -73,7 +73,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <header className="sticky top-0 z-10 flex h-14 items-center gap-4 border-b bg-background/80 px-4 backdrop-blur-sm md:hidden">
           <SidebarTrigger />
           <h1 className="text-lg font-bold font-headline text-foreground">
-            SenseScape
+            Antonio Miguel
           </h1>
         </header>
         <main className="flex-1 p-4 sm:p-6 md:p-8">{children}</main>
