@@ -13,6 +13,7 @@ import {
   X,
 } from 'lucide-react';
 import type { Icon as LucideIcon } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 type Sound = {
   name: string;
@@ -23,12 +24,20 @@ type Category = {
   name: string;
   icon: LucideIcon;
   sounds: Sound[];
+  cardColor: string;
+  color: string;
+  textColor: string;
+  iconColor: string;
 };
 
 const soundData: Category[] = [
   {
     name: 'Natureza',
     icon: Leaf,
+    cardColor: 'bg-green-50 dark:bg-green-900/30',
+    color: 'bg-green-100 dark:bg-green-900/60',
+    textColor: 'text-green-900 dark:text-green-200',
+    iconColor: 'text-green-600 dark:text-green-400',
     sounds: [
       { name: 'Chuva', description: 'O som calmante da chuva caindo.' },
       { name: 'Vento', description: 'O som do vento soprando suavemente.' },
@@ -38,6 +47,10 @@ const soundData: Category[] = [
   {
     name: 'Animais',
     icon: Cat,
+    cardColor: 'bg-orange-50 dark:bg-orange-900/30',
+    color: 'bg-orange-100 dark:bg-orange-900/60',
+    textColor: 'text-orange-900 dark:text-orange-200',
+    iconColor: 'text-orange-600 dark:text-orange-400',
     sounds: [
       { name: 'Cachorro', description: 'O latido amigável de um cachorro.' },
       { name: 'Gato', description: 'O miado suave de um gato.' },
@@ -47,6 +60,10 @@ const soundData: Category[] = [
   {
     name: 'Objetos',
     icon: Car,
+    cardColor: 'bg-sky-50 dark:bg-sky-900/30',
+    color: 'bg-sky-100 dark:bg-sky-900/60',
+    textColor: 'text-sky-900 dark:text-sky-200',
+    iconColor: 'text-sky-600 dark:text-sky-400',
     sounds: [
       { name: 'Telefone', description: 'O som de um telefone antigo tocando.' },
       { name: 'Carro', description: 'O som de um carro passando na rua.' },
@@ -56,6 +73,10 @@ const soundData: Category[] = [
   {
     name: 'Instrumentos',
     icon: Music,
+    cardColor: 'bg-purple-50 dark:bg-purple-900/30',
+    color: 'bg-purple-100 dark:bg-purple-900/60',
+    textColor: 'text-purple-900 dark:text-purple-200',
+    iconColor: 'text-purple-600 dark:text-purple-400',
     sounds: [
       { name: 'Violão', description: 'O som das cordas de um violão.' },
       { name: 'Piano', description: 'Uma melodia suave tocada no piano.' },
@@ -65,6 +86,10 @@ const soundData: Category[] = [
   {
     name: 'Emoções',
     icon: Smile,
+    cardColor: 'bg-yellow-50 dark:bg-yellow-900/30',
+    color: 'bg-yellow-100 dark:bg-yellow-900/60',
+    textColor: 'text-yellow-900 dark:text-yellow-200',
+    iconColor: 'text-yellow-600 dark:text-yellow-400',
     sounds: [
       { name: 'Risada', description: 'O som de uma criança rindo feliz.' },
       { name: 'Choro', description: 'O som de um bebê chorando.' },
@@ -86,6 +111,12 @@ export default function SoundDiscoveryPage() {
     setSelectedCategory(null);
   };
 
+  // Dummy function for sound playback
+  const playSound = (soundName: string) => {
+    console.log(`Playing sound: ${soundName}`);
+    // In a real app, you would use Web Audio API or a library to play a sound file.
+  }
+
   return (
     <div className="w-full">
       <div className="mb-8">
@@ -96,29 +127,32 @@ export default function SoundDiscoveryPage() {
       </div>
 
       {selectedCategory ? (
-        <Card className="bg-card shadow-lg rounded-2xl animate-in fade-in-50">
+        <Card className={cn("shadow-lg rounded-2xl animate-in fade-in-50", selectedCategory.color)}>
           <CardHeader className="flex flex-row items-center justify-between">
             <div className="flex items-center gap-4">
-              <selectedCategory.icon className="w-8 h-8 text-primary" />
-              <CardTitle className="text-3xl font-headline">{selectedCategory.name}</CardTitle>
+              <selectedCategory.icon className={cn("w-8 h-8", selectedCategory.iconColor)} />
+              <CardTitle className={cn("text-3xl font-headline", selectedCategory.textColor)}>{selectedCategory.name}</CardTitle>
             </div>
-            <Button variant="ghost" size="icon" onClick={handleClearSelection} aria-label="Fechar categoria">
+            <Button variant="ghost" size="icon" onClick={handleClearSelection} aria-label="Fechar categoria" className={cn(selectedCategory.textColor, "hover:bg-black/10")}>
               <X className="w-6 h-6" />
             </Button>
           </CardHeader>
           <CardContent>
-            <p className="text-muted-foreground mb-6">Toque nos botões para ouvir os sons e aprender sobre eles.</p>
+            <p className={cn("mb-6", selectedCategory.textColor, "opacity-80")}>Toque em uma linha para ouvir o som e aprender sobre ele.</p>
             <div className="space-y-4">
               {selectedCategory.sounds.map((sound) => (
-                <div key={sound.name} className="flex items-center justify-between p-4 bg-secondary rounded-xl">
+                <button
+                  key={sound.name}
+                  onClick={() => playSound(sound.name)}
+                  className="w-full flex items-center justify-between p-4 bg-background/50 dark:bg-background/20 rounded-xl text-left transition-all duration-200 ease-in-out transform hover:scale-[1.02] hover:shadow-lg active:scale-95 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                  aria-label={`Tocar som de ${sound.name}`}
+                >
                   <div>
-                    <h3 className="text-xl font-semibold text-secondary-foreground">{sound.name}</h3>
-                    <p className="text-muted-foreground">{sound.description}</p>
+                    <h3 className={cn("text-xl font-semibold", selectedCategory.textColor)}>{sound.name}</h3>
+                    <p className={cn(selectedCategory.textColor, "opacity-70")}>{sound.description}</p>
                   </div>
-                  <Button size="lg" aria-label={`Tocar som de ${sound.name}`}>
-                    <Volume2 className="w-6 h-6" />
-                  </Button>
-                </div>
+                  <Volume2 className={cn("w-8 h-8 flex-shrink-0", selectedCategory.iconColor)} />
+                </button>
               ))}
             </div>
           </CardContent>
@@ -128,7 +162,10 @@ export default function SoundDiscoveryPage() {
           {soundData.map((category) => (
             <Card
               key={category.name}
-              className="bg-card shadow-lg rounded-2xl hover:bg-secondary transition-colors cursor-pointer transform hover:-translate-y-1 duration-300"
+              className={cn(
+                  "shadow-lg rounded-2xl transition-all duration-300 cursor-pointer transform hover:-translate-y-1 hover:shadow-xl hover:brightness-105",
+                  category.cardColor
+              )}
               onClick={() => handleSelectCategory(category)}
               onKeyDown={(e) => e.key === 'Enter' && handleSelectCategory(category)}
               tabIndex={0}
@@ -136,8 +173,8 @@ export default function SoundDiscoveryPage() {
               aria-label={`Abrir categoria de sons: ${category.name}`}
             >
               <CardContent className="flex flex-col items-center justify-center p-8 text-center">
-                <category.icon className="w-16 h-16 mb-4 text-primary" />
-                <h2 className="text-2xl font-bold font-headline text-card-foreground">
+                <category.icon className={cn("w-16 h-16 mb-4", category.iconColor)} />
+                <h2 className={cn("text-2xl font-bold font-headline", category.textColor)}>
                   {category.name}
                 </h2>
               </CardContent>
