@@ -23,6 +23,7 @@ import {
   BrainCircuit,
   Waves,
 } from 'lucide-react';
+import { useState, useEffect } from 'react';
 
 const navItems = [
   { href: '/', label: 'Descobrindo Sons', icon: Ear },
@@ -36,6 +37,21 @@ const navItems = [
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  if (!isMounted) {
+    // Render a simplified layout or a skeleton on the server and initial client render
+    // to prevent hydration mismatch.
+    return (
+      <div className="flex min-h-svh w-full">
+        <main className="flex-1 p-4 sm:p-6 md:p-8">{children}</main>
+      </div>
+    );
+  }
 
   return (
     <SidebarProvider>
