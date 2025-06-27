@@ -8,39 +8,39 @@ body {
 
 @layer base {
   :root {
-    --background: 220 40% 10%; /* Deep, dark blue */
-    --foreground: 210 40% 98%; /* Light, off-white */
+    --background: 40 50% 96%; /* Warm, very light beige */
+    --foreground: 20 20% 25%; /* Dark, warm gray */
     
-    --card: 220 40% 15%;
-    --card-foreground: 210 40% 98%;
+    --card: 0 0% 100%; /* White */
+    --card-foreground: 20 20% 25%;
     
-    --popover: 220 40% 12%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 20 20% 25%;
     
-    --primary: 330 90% 65%; /* Vibrant magenta/pink */
+    --primary: 14 90% 60%; /* Vibrant Coral/Orange */
     --primary-foreground: 0 0% 100%;
     
-    --secondary: 220 40% 20%; /* Slightly lighter dark blue */
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 40 50% 90%; /* Lighter Beige */
+    --secondary-foreground: 20 20% 25%;
     
-    --muted: 220 40% 25%;
-    --muted-foreground: 210 20% 75%;
+    --muted: 40 50% 88%;
+    --muted-foreground: 20 15% 45%;
     
-    --accent: 180 80% 50%; /* Bright cyan/teal */
-    --accent-foreground: 220 40% 10%;
+    --accent: 195 85% 45%; /* Vibrant Cyan/Blue */
+    --accent-foreground: 0 0% 100%;
     
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
     
-    --border: 220 40% 25%;
-    --input: 220 40% 20%;
-    --ring: 330 90% 70%;
+    --border: 40 30% 85%;
+    --input: 40 30% 90%;
+    --ring: 14 90% 60%;
     
-    --chart-1: 330 90% 65%;
-    --chart-2: 180 80% 50%;
-    --chart-3: 50 90% 60%; /* Bright yellow */
-    --chart-4: 200 85% 65%; /* Bright blue */
-    --chart-5: 260 80% 70%; /* Soft purple */
+    --chart-1: 14 90% 60%; /* Coral/Orange */
+    --chart-2: 195 85% 45%; /* Cyan/Blue */
+    --chart-3: 340 90% 65%; /* Pink */
+    --chart-4: 50 95% 60%;  /* Yellow */
+    --chart-5: 260 80% 65%; /* Purple */
     
     --radius: 1rem;
   }

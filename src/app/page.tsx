@@ -20,17 +20,18 @@ type Module = {
   icon: LucideIcon;
   description: string;
   iconColor: string;
-  cardColor: string;
+  cardClasses: string;
+  iconContainerClasses: string;
 };
 
 const modules: Module[] = [
-    { href: '/sound-discovery', label: 'Descobrindo Sons', icon: Ear, description: 'Explore, ouça e grave um universo de sons.', iconColor: 'text-green-400', cardColor: 'hover:bg-green-500/10' },
-    { href: '/tactile-games', label: 'Toque e Movimento', icon: Hand, description: 'Use suas mãos para explorar, desenhar e sentir.', iconColor: 'text-orange-400', cardColor: 'hover:bg-orange-500/10' },
-    { href: '/adapted-visuals', label: 'Brilho Mágico', icon: Sparkles, description: 'Atividades visuais com alto contraste para estimular a visão.', iconColor: 'text-yellow-400', cardColor: 'hover:bg-yellow-500/10' },
-    { href: '/story-time', label: 'Histórias com Sentidos', icon: BookOpen, description: 'Ouça, sinta e imagine com histórias interativas.', iconColor: 'text-sky-400', cardColor: 'hover:bg-sky-500/10' },
-    { href: '/music-time', label: 'Cante com o Som', icon: Music, description: 'Siga o ritmo, cante junto e crie suas melodias.', iconColor: 'text-purple-400', cardColor: 'hover:bg-purple-500/10' },
-    { href: '/sound-guesses', label: 'Adivinha com Som', icon: HelpCircle, description: 'Teste sua audição adivinhando os diferentes sons.', iconColor: 'text-red-400', cardColor: 'hover:bg-red-500/10' },
-    { href: '/personalization', label: 'Personalização IA', icon: BrainCircuit, description: 'Deixe a IA adaptar as atividades para a criança.', iconColor: 'text-pink-400', cardColor: 'hover:bg-pink-500/10' },
+    { href: '/sound-discovery', label: 'Descobrindo Sons', icon: Ear, description: 'Explore, ouça e grave um universo de sons.', iconColor: 'text-green-800', cardClasses: 'bg-green-200/80 hover:bg-green-200/90', iconContainerClasses: 'bg-green-100' },
+    { href: '/tactile-games', label: 'Toque e Movimento', icon: Hand, description: 'Use suas mãos para explorar, desenhar e sentir.', iconColor: 'text-orange-800', cardClasses: 'bg-orange-200/80 hover:bg-orange-200/90', iconContainerClasses: 'bg-orange-100' },
+    { href: '/adapted-visuals', label: 'Brilho Mágico', icon: Sparkles, description: 'Atividades visuais com alto contraste para estimular a visão.', iconColor: 'text-yellow-800', cardClasses: 'bg-yellow-200/80 hover:bg-yellow-200/90', iconContainerClasses: 'bg-yellow-100' },
+    { href: '/story-time', label: 'Histórias com Sentidos', icon: BookOpen, description: 'Ouça, sinta e imagine com histórias interativas.', iconColor: 'text-sky-800', cardClasses: 'bg-sky-200/80 hover:bg-sky-200/90', iconContainerClasses: 'bg-sky-100' },
+    { href: '/music-time', label: 'Cante com o Som', icon: Music, description: 'Siga o ritmo, cante junto e crie suas melodias.', iconColor: 'text-purple-800', cardClasses: 'bg-purple-200/80 hover:bg-purple-200/90', iconContainerClasses: 'bg-purple-100' },
+    { href: '/sound-guesses', label: 'Adivinha com Som', icon: HelpCircle, description: 'Teste sua audição adivinhando os diferentes sons.', iconColor: 'text-red-800', cardClasses: 'bg-red-200/80 hover:bg-red-200/90', iconContainerClasses: 'bg-red-100' },
+    { href: '/personalization', label: 'Personalização IA', icon: BrainCircuit, description: 'Deixe a IA adaptar as atividades para a criança.', iconColor: 'text-pink-800', cardClasses: 'bg-pink-200/80 hover:bg-pink-200/90', iconContainerClasses: 'bg-pink-100' },
 ];
 
 export default function DashboardPage() {
@@ -53,8 +54,8 @@ export default function DashboardPage() {
           <Card
             key={module.href}
             className={cn(
-                "bg-card shadow-lg rounded-2xl flex flex-col overflow-hidden group cursor-pointer transition-all duration-300 transform hover:-translate-y-1 hover:shadow-xl",
-                module.cardColor
+                "shadow-lg rounded-2xl flex flex-col overflow-hidden group cursor-pointer transition-all duration-300 transform hover:-translate-y-1 hover:shadow-xl border-0",
+                module.cardClasses
             )}
             onClick={() => handleCardClick(module.href)}
             onKeyDown={(e) => {
@@ -68,7 +69,7 @@ export default function DashboardPage() {
             aria-label={`Ir para ${module.label}`}
           >
             <CardContent className="flex flex-col items-center text-center p-8 flex-grow">
-                <div className="p-4 bg-secondary rounded-full mb-4">
+                <div className={cn("p-4 rounded-full mb-4", module.iconContainerClasses)}>
                     <module.icon className={cn("w-12 h-12", module.iconColor)} />
                 </div>
                 <CardTitle className="text-2xl font-bold font-headline text-card-foreground mb-2">{module.label}</CardTitle>
