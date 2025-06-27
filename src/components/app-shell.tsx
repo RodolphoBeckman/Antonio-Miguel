@@ -48,7 +48,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <div className="min-h-svh w-full bg-background">
+    <div className="min-h-svh w-full bg-background portrait:hidden md:block">
       <header className="sticky top-0 z-10 flex h-20 items-center justify-between border-b border-border bg-background/80 px-4 backdrop-blur-sm">
         <Link href="/" className="flex items-center gap-3" aria-label="Página inicial do Antonio Miguel">
           <div className="bg-primary p-2.5 rounded-lg">

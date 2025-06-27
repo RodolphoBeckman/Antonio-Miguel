@@ -3,6 +3,7 @@ import './globals.css';
 import { AppShell } from '@/components/app-shell';
 import { Toaster } from '@/components/ui/toaster';
 import { SettingsProvider } from '@/context/settings-context';
+import { OrientationLock } from '@/components/orientation-lock';
 
 export const metadata: Metadata = {
   title: 'Antonio Miguel',
@@ -26,6 +27,7 @@ export default function RootLayout({
           <AppShell>{children}</AppShell>
         </SettingsProvider>
         <Toaster />
+        <OrientationLock />
       </body>
     </html>
   );
