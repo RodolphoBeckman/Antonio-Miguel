@@ -13,6 +13,8 @@ import {
   X,
   Loader2,
   Square,
+  Mic,
+  StopCircle,
 } from 'lucide-react';
 import type { Icon as LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -112,6 +114,11 @@ export default function SoundDiscoveryPage() {
   const [audioCache, setAudioCache] = useState<Record<string, string>>({});
   const { toast } = useToast();
 
+  const [customAudio, setCustomAudio] = useState<Record<string, string>>({});
+  const [recordingStatus, setRecordingStatus] = useState<{ soundName: string | null, isRecording: boolean }>({ soundName: null, isRecording: false });
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+
   const handleSelectCategory = async (category: Category) => {
     setSelectedCategory(category);
     if (audioRef.current) {
@@ -176,6 +183,18 @@ export default function SoundDiscoveryPage() {
 
     setPlayingSound(null);
 
+    // 1. Check for custom recorded audio first
+    const customAudioUrl = customAudio[soundName];
+    if (customAudioUrl) {
+      if (audioRef.current) {
+        audioRef.current.src = customAudioUrl;
+        audioRef.current.play().catch((e) => console.error('Error playing custom audio:', e));
+        setPlayingSound(soundName);
+      }
+      return;
+    }
+    
+    // 2. Fallback to AI-generated audio
     try {
       let audioDataUri = audioCache[soundName];
 
@@ -188,7 +207,7 @@ export default function SoundDiscoveryPage() {
 
       if (audioRef.current && audioDataUri) {
         audioRef.current.src = audioDataUri;
-        audioRef.current.play().catch((e) => console.error('Error playing audio:', e));
+        audioRef.current.play().catch((e) => console.error('Error playing AI audio:', e));
         setPlayingSound(soundName);
       }
     } catch (error) {
@@ -203,13 +222,66 @@ export default function SoundDiscoveryPage() {
     }
   };
 
+  const startRecording = async (soundName: string) => {
+    if (recordingStatus.isRecording) {
+      stopRecording();
+      return;
+    }
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        
+        const recorder = new MediaRecorder(stream);
+        mediaRecorderRef.current = recorder;
+        audioChunksRef.current = [];
+
+        recorder.ondataavailable = (event) => {
+            audioChunksRef.current.push(event.data);
+        };
+
+        recorder.onstop = () => {
+            const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+            const audioUrl = URL.createObjectURL(audioBlob);
+            setCustomAudio((prev) => ({ ...prev, [soundName]: audioUrl }));
+            stream.getTracks().forEach(track => track.stop());
+            toast({ title: "Gravação Salva!", description: "Seu áudio foi salvo com sucesso."});
+        };
+        
+        recorder.start();
+        setRecordingStatus({ soundName: soundName, isRecording: true });
+
+    } catch (err) {
+        console.error("Error accessing microphone:", err);
+        toast({
+            variant: "destructive",
+            title: "Acesso ao Microfone Negado",
+            description: "Por favor, permita o acesso ao microfone nas configurações do seu navegador.",
+        });
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+        mediaRecorderRef.current.stop();
+        setRecordingStatus({ soundName: null, isRecording: false });
+    }
+  };
+
+  const handleRecordClick = (e: React.MouseEvent, soundName: string) => {
+    e.stopPropagation();
+    if (recordingStatus.isRecording && recordingStatus.soundName === soundName) {
+      stopRecording();
+    } else {
+      startRecording(soundName);
+    }
+  }
+
   return (
     <div className="w-full">
       <audio ref={audioRef} onEnded={() => setPlayingSound(null)} />
       <div className="mb-8">
         <h1 className="text-4xl font-bold font-headline text-foreground">Descobrindo Sons</h1>
         <p className="text-lg text-muted-foreground mt-2">
-          Explore um mundo de sons! Toque em uma categoria para começar a ouvir.
+          Explore um mundo de sons! Toque para ouvir ou segure para gravar sua própria voz.
         </p>
       </div>
 
@@ -232,7 +304,7 @@ export default function SoundDiscoveryPage() {
               </div>
             ) : (
               <>
-                <p className={cn("mb-6", selectedCategory.textColor, "opacity-80")}>Toque em uma linha para ouvir o som e aprender sobre ele.</p>
+                <p className={cn("mb-6", selectedCategory.textColor, "opacity-80")}>Toque em uma linha para ouvir ou no microfone para gravar.</p>
                 <div className="space-y-4">
                   {selectedCategory.sounds.map((sound) => (
                     <button
@@ -244,19 +316,37 @@ export default function SoundDiscoveryPage() {
                         "focus:ring-ring"
                       )}
                       aria-label={`Tocar som de ${sound.name}`}
-                      disabled={loadingSound !== null || loadingCategory}
+                      disabled={loadingSound !== null || loadingCategory || (recordingStatus.isRecording && recordingStatus.soundName !== sound.name)}
                     >
                       <div>
                         <h3 className={cn("text-xl font-semibold", selectedCategory.textColor)}>{sound.name}</h3>
                         <p className={cn(selectedCategory.textColor, "opacity-70")}>{sound.description}</p>
                       </div>
-                      {loadingSound === sound.name ? (
-                        <Loader2 className={cn("w-8 h-8 flex-shrink-0 animate-spin", selectedCategory.iconColor)} />
-                      ) : playingSound === sound.name ? (
-                        <Square className={cn("w-8 h-8 flex-shrink-0", selectedCategory.iconColor)} />
-                      ) : (
-                        <Volume2 className={cn("w-8 h-8 flex-shrink-0", selectedCategory.iconColor)} />
-                      )}
+                      <div className="flex items-center gap-3">
+                        <button 
+                            onClick={(e) => handleRecordClick(e, sound.name)}
+                            className={cn(
+                                "p-2 rounded-full transition-colors disabled:opacity-50",
+                                recordingStatus.soundName === sound.name ? "bg-red-500/20" : "hover:bg-black/10"
+                            )}
+                            aria-label={recordingStatus.isRecording && recordingStatus.soundName === sound.name ? `Parar gravação de ${sound.name}` : `Gravar som para ${sound.name}`}
+                            disabled={loadingSound !== null || loadingCategory || (recordingStatus.isRecording && recordingStatus.soundName !== sound.name)}
+                        >
+                            {recordingStatus.isRecording && recordingStatus.soundName === sound.name ? (
+                                <StopCircle className="w-6 h-6 text-red-600 animate-pulse" />
+                            ) : (
+                                <Mic className={cn("w-6 h-6", selectedCategory.iconColor)} />
+                            )}
+                        </button>
+
+                        {loadingSound === sound.name ? (
+                            <Loader2 className={cn("w-8 h-8 flex-shrink-0 animate-spin", selectedCategory.iconColor)} />
+                        ) : playingSound === sound.name ? (
+                            <Square className={cn("w-8 h-8 flex-shrink-0", selectedCategory.iconColor)} />
+                        ) : (
+                            <Volume2 className={cn("w-8 h-8 flex-shrink-0", selectedCategory.iconColor)} />
+                        )}
+                      </div>
                     </button>
                   ))}
                 </div>
