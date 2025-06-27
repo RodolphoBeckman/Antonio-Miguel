@@ -23,13 +23,13 @@ function AirDrawingGame() {
   };
 
   return (
-    <div className="space-y-4 text-center p-6 bg-secondary rounded-xl">
-      <p className="text-lg font-semibold text-secondary-foreground">
+    <div className="space-y-4 text-center p-6 bg-secondary rounded-2xl">
+      <p className="text-xl font-semibold text-secondary-foreground">
         Instrução atual:
       </p>
-      <p className="text-2xl font-bold text-primary min-h-[6rem] flex items-center justify-center">
+      <div className="text-3xl font-bold text-primary min-h-[8rem] flex items-center justify-center p-2">
         &quot;{drawingInstructions[currentIndex]}&quot;
-      </p>
+      </div>
       <Button onClick={handleNext} size="lg">
         Próxima Instrução
       </Button>
@@ -88,9 +88,9 @@ function TouchTheSoundGame() {
   };
 
   return (
-    <div className="p-4 bg-secondary rounded-xl">
+    <div className="p-4 bg-secondary rounded-2xl">
       <audio ref={audioRef} onEnded={() => setPlayingIndex(null)} />
-      <p className="text-center text-muted-foreground mb-4 min-h-[24px]">
+      <p className="text-center text-muted-foreground mb-4 min-h-[24px] text-lg">
         {isLoading ? "Carregando som..." : "Toque nos círculos para sentir a vibração e ouvir o som."}
       </p>
       <div className="grid grid-cols-3 gap-4 h-64">
@@ -105,7 +105,7 @@ function TouchTheSoundGame() {
               {playingIndex === i ? (
                 <div className="w-full h-full rounded-full bg-white/30 animate-ping-once" />
               ) : (
-                <Waves className="w-8 h-8" />
+                <Waves className="w-10 h-10" />
               )}
             </button>
           </div>
@@ -129,15 +129,15 @@ function TouchTheSoundGame() {
 export default function TactileGamesPage() {
   return (
     <div className="w-full">
-      <div className="mb-8">
-        <h1 className="text-4xl font-bold font-headline text-foreground">
+      <div className="mb-12 text-center">
+        <h1 className="text-5xl font-extrabold font-headline text-foreground">
           Toque e Movimento
         </h1>
-        <p className="text-lg text-muted-foreground mt-2">
+        <p className="text-xl text-muted-foreground mt-2">
           Use suas mãos para explorar, desenhar e sentir o mundo.
         </p>
       </div>
-      <div className="grid md:grid-cols-2 gap-8">
+      <div className="flex flex-col gap-10">
         <FeatureCard
           title="Desenho no Ar"
           description="Siga as instruções para desenhar formas no ar com seus dedos e braços."

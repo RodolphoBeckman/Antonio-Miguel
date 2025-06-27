@@ -14,7 +14,7 @@ function FollowTheLightGame() {
         {isPlaying ? (
            <div className="absolute w-12 h-12 bg-yellow-300 rounded-full shadow-[0_0_20px_10px_rgba(253,244,152,0.7)] animate-light-follow" />
         ) : (
-          <p>O jogo aparecerá aqui.</p>
+          <p className="text-xl">O jogo aparecerá aqui.</p>
         )}
       </div>
       <Button onClick={() => setIsPlaying(p => !p)} size="lg">
@@ -64,7 +64,7 @@ function NeonPainting() {
   
   return (
     <div className="p-4 bg-secondary rounded-xl text-center">
-       <p className="text-center text-muted-foreground mb-4">Pinte com cores neon sobre o fundo preto.</p>
+       <p className="text-center text-muted-foreground mb-4 text-lg">Pinte com cores neon sobre o fundo preto.</p>
        <div 
          ref={canvasRef}
          onMouseMove={handlePaint}
@@ -91,13 +91,13 @@ function NeonPainting() {
 export default function AdaptedVisualsPage() {
   return (
     <div className="w-full">
-      <div className="mb-8">
-        <h1 className="text-4xl font-bold font-headline text-foreground">Brilho Mágico</h1>
-        <p className="text-lg text-muted-foreground mt-2">
+      <div className="mb-12 text-center">
+        <h1 className="text-5xl font-extrabold font-headline text-foreground">Brilho Mágico</h1>
+        <p className="text-xl text-muted-foreground mt-2">
           Atividades visuais com alto contraste para estimular a visão.
         </p>
       </div>
-      <div className="grid md:grid-cols-2 gap-8">
+      <div className="flex flex-col gap-10">
         <FeatureCard
           title="Seguir a Luz"
           description="Siga a luz brilhante com seus olhos enquanto ela se move pela tela."

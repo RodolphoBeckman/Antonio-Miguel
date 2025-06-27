@@ -8,10 +8,10 @@ import { cn } from '@/lib/utils';
 
 const sequence = ['red', 'blue', 'yellow', 'green'];
 const noteColors: { [key: string]: string } = {
-  red: 'bg-red-400',
-  blue: 'bg-blue-400',
+  red: 'bg-red-500',
+  blue: 'bg-blue-500',
   yellow: 'bg-yellow-400',
-  green: 'bg-green-400',
+  green: 'bg-green-500',
 };
 
 function RepeatTheSoundGame() {
@@ -27,21 +27,21 @@ function RepeatTheSoundGame() {
   };
 
   return (
-    <div className="p-4 bg-secondary rounded-xl">
+    <div className="p-4 bg-secondary rounded-2xl">
       <div className="flex justify-center gap-4 my-4">
         {sequence.map((color) => (
           <div
             key={color}
             className={cn(
-              "w-20 h-20 rounded-full border-4 border-white transition-all duration-200",
+              "w-20 h-20 rounded-full border-4 border-white/50 transition-all duration-200",
               noteColors[color],
-              activeNote === color ? 'scale-110 shadow-lg' : 'opacity-70'
+              activeNote === color ? 'scale-110 shadow-lg shadow-black/30' : 'opacity-70'
             )}
             aria-label={`Nota ${color}`}
           />
         ))}
       </div>
-      <p className="text-center text-muted-foreground mb-4">
+      <p className="text-center text-muted-foreground text-lg mb-4">
         Ouça a sequência e tente repetir os sons tocando na tela.
       </p>
       <div className="text-center">
@@ -84,15 +84,15 @@ function SingAlongGame() {
     }
   
     return (
-      <div className="p-6 bg-secondary rounded-xl text-center">
-        <div className="min-h-[6rem] flex items-center justify-center bg-background rounded-lg p-4 mb-4">
+      <div className="p-6 bg-secondary rounded-2xl text-center">
+        <div className="min-h-[8rem] flex items-center justify-center bg-background rounded-xl p-4 mb-4">
            {isPlaying ? (
-             <p className="text-3xl font-bold text-primary animate-pulse">{karaokeLyrics[currentLine]}</p>
+             <p className="text-4xl font-bold text-primary animate-pulse">{karaokeLyrics[currentLine]}</p>
            ) : (
-            <p className="text-xl text-muted-foreground">Pronto para cantar?</p>
+            <p className="text-2xl text-muted-foreground">Pronto para cantar?</p>
            )}
         </div>
-        <p className="text-center text-muted-foreground mb-4">Cante junto com a melodia e acompanhe a letra falada.</p>
+        <p className="text-center text-muted-foreground text-lg mb-4">Cante junto com a melodia e acompanhe a letra falada.</p>
         <Button onClick={handlePlay} size="lg">
           <Mic className="mr-2" /> {isPlaying ? 'Parar de Cantar' : 'Começar a Cantar'}
         </Button>
@@ -104,13 +104,13 @@ function SingAlongGame() {
 export default function MusicTimePage() {
   return (
     <div className="w-full">
-      <div className="mb-8">
-        <h1 className="text-4xl font-bold font-headline text-foreground">Cante com o Som</h1>
-        <p className="text-lg text-muted-foreground mt-2">
+      <div className="mb-12 text-center">
+        <h1 className="text-5xl font-extrabold font-headline text-foreground">Cante com o Som</h1>
+        <p className="text-xl text-muted-foreground mt-2">
           Vamos fazer música! Siga o ritmo e cante com a gente.
         </p>
       </div>
-      <div className="grid md:grid-cols-2 gap-8">
+      <div className="flex flex-col gap-10">
         <FeatureCard
           title="Repita o Som"
           description="Ouça a sequência de notas e repita na ordem correta para treinar sua memória."

@@ -68,21 +68,21 @@ export default function StoryTimePage() {
   
   const handlePrevPage = () => {
     if (storyPage > 0) {
-      setStoryPage(p => p - 1);
+      setStoryPage(p => p + 1);
     }
   };
 
   if (selectedStory) {
     return (
       <div className="w-full">
-        <Button onClick={handleBackToList} variant="ghost" className="mb-4">
+        <Button onClick={handleBackToList} variant="ghost" className="mb-4 text-lg p-0 h-auto">
           <ArrowLeft className="mr-2" /> Voltar para Histórias
         </Button>
         <Card className="bg-card shadow-lg rounded-2xl overflow-hidden animate-in fade-in-50">
-          <CardContent className="p-8 text-center">
-            <h1 className="text-4xl font-bold font-headline mb-2">{selectedStory.title}</h1>
+          <CardContent className="p-6 md:p-8 text-center">
+            <h1 className="text-4xl font-extrabold font-headline mb-2">{selectedStory.title}</h1>
             <p className="text-lg text-muted-foreground mb-8">Página {storyPage + 1} de {selectedStory.content.length}</p>
-            <div className="text-2xl/relaxed text-foreground min-h-[10rem] flex items-center justify-center bg-secondary p-6 rounded-xl">
+            <div className="text-2xl/relaxed text-foreground min-h-[12rem] flex items-center justify-center bg-secondary p-6 rounded-xl">
               <p>
                 {selectedStory.content[storyPage].split(/(\[.*?\]|\(.*?\))/).map((part, index) => {
                   if (part.startsWith('[VIBRAÇÃO')) {
@@ -95,7 +95,7 @@ export default function StoryTimePage() {
                 })}
               </p>
             </div>
-            <div className="flex justify-center gap-4 mt-8">
+            <div className="grid grid-cols-2 gap-4 mt-8">
               <Button onClick={handlePrevPage} disabled={storyPage === 0} size="lg">Anterior</Button>
               <Button onClick={handleNextPage} disabled={storyPage === selectedStory.content.length - 1} size="lg">Próximo</Button>
             </div>
@@ -107,13 +107,13 @@ export default function StoryTimePage() {
 
   return (
     <div className="w-full">
-      <div className="mb-8">
-        <h1 className="text-4xl font-bold font-headline text-foreground">Histórias com Sentidos</h1>
-        <p className="text-lg text-muted-foreground mt-2">
+      <div className="mb-12 text-center">
+        <h1 className="text-5xl font-extrabold font-headline text-foreground">Histórias com Sentidos</h1>
+        <p className="text-xl text-muted-foreground mt-2">
           Escolha uma história para ouvir, sentir e imaginar.
         </p>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+      <div className="flex flex-col gap-8">
         {stories.map((story) => (
           <Card
             key={story.title}
@@ -135,8 +135,8 @@ export default function StoryTimePage() {
             </div>
             <CardContent className="p-6">
               <p className="text-primary font-semibold mb-1">{story.theme}</p>
-              <h2 className="text-2xl font-bold font-headline text-card-foreground mb-4">{story.title}</h2>
-              <Button className="w-full">
+              <h2 className="text-3xl font-bold font-headline text-card-foreground mb-4">{story.title}</h2>
+              <Button className="w-full" size="lg">
                 Ouvir História <ChevronsRight className="ml-2" />
               </Button>
             </CardContent>

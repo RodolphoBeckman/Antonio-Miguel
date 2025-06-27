@@ -3,16 +3,12 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
-  SidebarProvider,
-  Sidebar,
-  SidebarHeader,
-  SidebarTrigger,
-  SidebarContent,
-  SidebarMenu,
-  SidebarMenuItem,
-  SidebarMenuButton,
-  SidebarInset,
-} from '@/components/ui/sidebar';
+  Sheet,
+  SheetContent,
+  SheetTrigger,
+  SheetClose,
+} from '@/components/ui/sheet';
+import { Button } from '@/components/ui/button';
 import {
   Ear,
   Hand,
@@ -23,8 +19,8 @@ import {
   BrainCircuit,
   Waves,
   Settings,
+  Menu,
 } from 'lucide-react';
-import { useState, useEffect } from 'react';
 
 const navItems = [
   { href: '/', label: 'Descobrindo Sons', icon: Ear },
@@ -40,77 +36,60 @@ const settingsNavItem = { href: '/settings', label: 'Configurações', icon: Set
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const [isMounted, setIsMounted] = useState(false);
 
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
-
-  if (!isMounted) {
-    // Render a simplified layout or a skeleton on the server and initial client render
-    // to prevent hydration mismatch.
-    return (
-      <div className="flex min-h-svh w-full">
-        <main className="flex-1 p-4 sm:p-6 md:p-8">{children}</main>
-      </div>
-    );
-  }
+  const NavLink = ({ href, label, icon: Icon, isSettings = false }: { href: string; label: string; icon: any, isSettings?: boolean }) => (
+    <SheetClose asChild>
+      <Link href={href}>
+        <Button
+          variant={pathname === href ? 'secondary' : 'ghost'}
+          className="w-full justify-start text-lg h-14"
+        >
+          <Icon className="mr-4 h-6 w-6" />
+          <span>{label}</span>
+        </Button>
+      </Link>
+    </SheetClose>
+  );
 
   return (
-    <SidebarProvider>
-      <Sidebar>
-        <SidebarContent className="p-4 bg-background flex flex-col">
-          <SidebarHeader className="p-0 mb-4">
-            <Link href="/" className="flex items-center gap-2" aria-label="Página inicial do Antonio Miguel">
-              <div className="bg-primary p-2 rounded-lg">
-                <Waves className="text-primary-foreground" />
-              </div>
-              <h1 className="text-xl font-bold font-headline text-foreground">
-                Antonio Miguel
-              </h1>
-            </Link>
-          </SidebarHeader>
-          <SidebarMenu className="flex-1">
-            {navItems.map((item) => (
-              <SidebarMenuItem key={item.href}>
-                <SidebarMenuButton
-                  asChild
-                  isActive={pathname === item.href}
-                  className="justify-start"
-                >
-                  <Link href={item.href}>
-                    <item.icon />
-                    <span>{item.label}</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            ))}
-          </SidebarMenu>
-          <SidebarMenu>
-              <SidebarMenuItem key={settingsNavItem.href}>
-                <SidebarMenuButton
-                  asChild
-                  isActive={pathname === settingsNavItem.href}
-                  className="justify-start"
-                >
-                  <Link href={settingsNavItem.href}>
-                    <settingsNavItem.icon />
-                    <span>{settingsNavItem.label}</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-          </SidebarMenu>
-        </SidebarContent>
-      </Sidebar>
-      <SidebarInset>
-        <header className="sticky top-0 z-10 flex h-14 items-center gap-4 border-b bg-background/80 px-4 backdrop-blur-sm md:hidden">
-          <SidebarTrigger />
-          <h1 className="text-lg font-bold font-headline text-foreground">
+    <div className="min-h-svh w-full bg-background">
+      <header className="sticky top-0 z-10 flex h-20 items-center justify-between border-b border-border bg-background/80 px-4 backdrop-blur-sm">
+        <Link href="/" className="flex items-center gap-3" aria-label="Página inicial do Antonio Miguel">
+          <div className="bg-primary p-2.5 rounded-lg">
+            <Waves className="h-6 w-6 text-primary-foreground" />
+          </div>
+          <h1 className="text-2xl font-extrabold font-headline text-foreground">
             Antonio Miguel
           </h1>
-        </header>
-        <main className="flex-1 p-4 sm:p-6 md:p-8">{children}</main>
-      </SidebarInset>
-    </SidebarProvider>
+        </Link>
+        <Sheet>
+          <SheetTrigger asChild>
+            <Button variant="ghost" size="icon">
+              <Menu className="h-8 w-8" />
+              <span className="sr-only">Abrir menu</span>
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="right" className="w-full max-w-sm p-6 flex flex-col">
+            <div className="flex items-center gap-3 mb-8">
+                <div className="bg-primary p-2.5 rounded-lg">
+                    <Waves className="h-6 w-6 text-primary-foreground" />
+                </div>
+                <h2 className="text-2xl font-extrabold font-headline text-foreground">
+                    Antonio Miguel
+                </h2>
+            </div>
+            <nav className="flex-1 flex flex-col gap-2">
+                {navItems.map((item) => (
+                    <NavLink key={item.href} {...item} />
+                ))}
+            </nav>
+            <div className="mt-auto">
+              <NavLink {...settingsNavItem} isSettings />
+            </div>
+          </SheetContent>
+        </Sheet>
+      </header>
+      <main className="p-4 sm:p-6 md:p-8">{children}</main>
+    </div>
   );
 }
