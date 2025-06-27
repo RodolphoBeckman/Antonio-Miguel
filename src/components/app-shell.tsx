@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useState, useEffect } from 'react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -40,6 +41,11 @@ const settingsNavItem = { href: '/settings', label: 'Configurações', icon: Set
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   return (
     <div className="min-h-svh w-full bg-background">
@@ -59,31 +65,37 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                     <Home className="h-8 w-8" />
                 </Link>
             </Button>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon">
-                  <Menu className="h-8 w-8" />
-                  <span className="sr-only">Abrir menu</span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-64 p-2">
-                {navItems.map((item) => (
-                  <DropdownMenuItem key={item.href} asChild className={cn(pathname === item.href && 'bg-secondary focus:bg-secondary/80')}>
-                    <Link href={item.href}>
-                      <item.icon className="mr-2 h-5 w-5" />
-                      <span>{item.label}</span>
+            {!mounted ? (
+              <Button variant="ghost" size="icon" disabled>
+                <Menu className="h-8 w-8" />
+              </Button>
+            ) : (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon">
+                    <Menu className="h-8 w-8" />
+                    <span className="sr-only">Abrir menu</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-64 p-2">
+                  {navItems.map((item) => (
+                    <DropdownMenuItem key={item.href} asChild className={cn(pathname === item.href && 'bg-secondary focus:bg-secondary/80')}>
+                      <Link href={item.href}>
+                        <item.icon className="mr-2 h-5 w-5" />
+                        <span>{item.label}</span>
+                      </Link>
+                    </DropdownMenuItem>
+                  ))}
+                  <DropdownMenuSeparator className="my-2" />
+                  <DropdownMenuItem asChild className={cn(pathname === settingsNavItem.href && 'bg-secondary focus:bg-secondary/80')}>
+                    <Link href={settingsNavItem.href}>
+                      <settingsNavItem.icon className="mr-2 h-5 w-5" />
+                      <span>{settingsNavItem.label}</span>
                     </Link>
                   </DropdownMenuItem>
-                ))}
-                <DropdownMenuSeparator className="my-2" />
-                <DropdownMenuItem asChild className={cn(pathname === settingsNavItem.href && 'bg-secondary focus:bg-secondary/80')}>
-                  <Link href={settingsNavItem.href}>
-                    <settingsNavItem.icon className="mr-2 h-5 w-5" />
-                    <span>{settingsNavItem.label}</span>
-                  </Link>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
         </div>
 
       </header>
