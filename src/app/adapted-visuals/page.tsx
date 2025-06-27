@@ -1,3 +1,4 @@
+
 'use client';
 import { FeatureCard } from '@/components/feature-card';
 import { Button } from '@/components/ui/button';
@@ -42,7 +43,7 @@ function NeonPainting() {
   const canvasRef = useRef<HTMLDivElement>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [isFullScreen, setIsFullScreen] = useState(false);
-  const [pencilSound, setPencilSound] = useState<string | null>(null);
+  const [drawingSound, setDrawingSound] = useState<string | null>(null);
   const [isLoadingSound, setIsLoadingSound] = useState(false);
   const { toast } = useToast();
 
@@ -53,20 +54,20 @@ function NeonPainting() {
     const generateSound = async () => {
       setIsLoadingSound(true);
       try {
-        const cachedSound = localStorage.getItem('pencilSound');
+        const cachedSound = localStorage.getItem('drawingSoundCache');
         if (cachedSound) {
-          setPencilSound(cachedSound);
+          setDrawingSound(cachedSound);
         } else {
-          const result = await synthesizeSpeech("Som de um lápis escrevendo em papel.");
+          const result = await synthesizeSpeech("O som de um giz de cera riscando suavemente sobre uma folha de papel.");
           if (result.audioDataUri) {
-            setPencilSound(result.audioDataUri);
-            localStorage.setItem('pencilSound', result.audioDataUri);
+            setDrawingSound(result.audioDataUri);
+            localStorage.setItem('drawingSoundCache', result.audioDataUri);
           } else {
             throw new Error("Não foi possível gerar o áudio.");
           }
         }
       } catch (error) {
-        console.error('Error generating pencil sound:', error);
+        console.error('Error generating drawing sound:', error);
         toast({
           variant: 'destructive',
           title: 'Erro ao carregar som',
@@ -112,7 +113,7 @@ function NeonPainting() {
         canvas.appendChild(dot);
     }
     
-    if (audioRef.current && pencilSound) {
+    if (audioRef.current && drawingSound) {
       audioRef.current.currentTime = 0;
       audioRef.current.play().catch(err => console.error("Audio play failed:", err));
     }
@@ -132,7 +133,7 @@ function NeonPainting() {
   if (isFullScreen) {
     return (
       <div className="fixed inset-0 bg-black z-50 flex flex-col items-center justify-center animate-in fade-in-20">
-        <audio ref={audioRef} src={pencilSound ?? undefined} />
+        <audio ref={audioRef} src={drawingSound ?? undefined} />
         <div 
           ref={canvasRef}
           onMouseDown={handlePaint}
