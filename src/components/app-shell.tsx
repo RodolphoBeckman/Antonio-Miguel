@@ -3,11 +3,12 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
-  Sheet,
-  SheetContent,
-  SheetTrigger,
-  SheetClose,
-} from '@/components/ui/sheet';
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import {
   Ear,
@@ -21,6 +22,7 @@ import {
   Settings,
   Menu,
 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 const navItems = [
   { href: '/', label: 'Descobrindo Sons', icon: Ear },
@@ -37,20 +39,6 @@ const settingsNavItem = { href: '/settings', label: 'Configurações', icon: Set
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
-  const NavLink = ({ href, label, icon: Icon, isSettings = false }: { href: string; label: string; icon: any, isSettings?: boolean }) => (
-    <SheetClose asChild>
-      <Link href={href}>
-        <Button
-          variant={pathname === href ? 'secondary' : 'ghost'}
-          className="w-full justify-start text-lg h-14"
-        >
-          <Icon className="mr-4 h-6 w-6" />
-          <span>{label}</span>
-        </Button>
-      </Link>
-    </SheetClose>
-  );
-
   return (
     <div className="min-h-svh w-full bg-background">
       <header className="sticky top-0 z-10 flex h-20 items-center justify-between border-b border-border bg-background/80 px-4 backdrop-blur-sm">
@@ -62,32 +50,33 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             Antonio Miguel
           </h1>
         </Link>
-        <Sheet>
-          <SheetTrigger asChild>
+        
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon">
               <Menu className="h-8 w-8" />
               <span className="sr-only">Abrir menu</span>
             </Button>
-          </SheetTrigger>
-          <SheetContent side="right" className="w-full max-w-sm p-6 flex flex-col">
-            <div className="flex items-center gap-3 mb-8">
-                <div className="bg-primary p-2.5 rounded-lg">
-                    <Waves className="h-6 w-6 text-primary-foreground" />
-                </div>
-                <h2 className="text-2xl font-extrabold font-headline text-foreground">
-                    Antonio Miguel
-                </h2>
-            </div>
-            <nav className="flex-1 flex flex-col gap-2">
-                {navItems.map((item) => (
-                    <NavLink key={item.href} {...item} />
-                ))}
-            </nav>
-            <div className="mt-auto">
-              <NavLink {...settingsNavItem} isSettings />
-            </div>
-          </SheetContent>
-        </Sheet>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-64 p-2">
+            {navItems.map((item) => (
+              <DropdownMenuItem key={item.href} asChild className={cn(pathname === item.href && 'bg-secondary focus:bg-secondary/80')}>
+                <Link href={item.href}>
+                  <item.icon className="mr-2 h-5 w-5" />
+                  <span>{item.label}</span>
+                </Link>
+              </DropdownMenuItem>
+            ))}
+            <DropdownMenuSeparator className="my-2" />
+            <DropdownMenuItem asChild className={cn(pathname === settingsNavItem.href && 'bg-secondary focus:bg-secondary/80')}>
+              <Link href={settingsNavItem.href}>
+                <settingsNavItem.icon className="mr-2 h-5 w-5" />
+                <span>{settingsNavItem.label}</span>
+              </Link>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
       </header>
       <main className="p-4 sm:p-6 md:p-8">{children}</main>
     </div>
