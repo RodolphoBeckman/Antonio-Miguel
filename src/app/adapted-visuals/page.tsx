@@ -1,7 +1,7 @@
 'use client';
 import { FeatureCard } from '@/components/feature-card';
 import { Button } from '@/components/ui/button';
-import { Palette, TrendingUp, X } from 'lucide-react';
+import { Palette, TrendingUp, X, Trash2 } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { synthesizeSpeech } from '@/ai/flows/synthesize-speech';
@@ -323,7 +323,7 @@ function NeonPainting() {
         <Button onClick={closeFullScreen} variant="secondary" className="absolute top-4 right-4 z-10">
           <X className="mr-2" /> Fechar
         </Button>
-        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-gray-900/60 backdrop-blur-sm p-2 rounded-full flex gap-3 shadow-lg z-10">
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-gray-900/60 backdrop-blur-sm p-2 rounded-full flex items-center gap-3 shadow-lg z-10">
           {neonColors.map((color) => (
             <button
               key={color}
@@ -342,6 +342,17 @@ function NeonPainting() {
               aria-label={`Selecionar cor ${color}`}
             />
           ))}
+          <div className="w-px h-10 bg-white/30 mx-1"></div>
+           <button
+            onClick={(e) => {
+                e.stopPropagation();
+                clearCanvas();
+            }}
+            className="w-12 h-12 rounded-full border-4 border-transparent hover:border-destructive transition-colors flex items-center justify-center text-white hover:text-destructive"
+            aria-label="Limpar desenho"
+          >
+            <Trash2 className="w-7 h-7" />
+          </button>
         </div>
       </div>
     );
