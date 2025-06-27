@@ -371,62 +371,79 @@ export default function SoundDiscoveryPage() {
           <CardContent>
             <p className={cn("mb-6", selectedCategory.textColor, "opacity-80")}>{categoryDescription}</p>
             <div className="space-y-4">
-              {selectedCategory.sounds.map((sound) => (
-                <button
-                  key={sound.name}
-                  onClick={() => playSound(sound.name, sound.soundPrompt)}
-                  className={cn(
-                    "w-full flex items-center justify-between p-4 rounded-xl text-left transition-all duration-200 ease-in-out transform hover:scale-[1.02] hover:shadow-lg active:scale-95 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-wait",
-                    selectedCategory.color,
-                    "focus:ring-ring"
-                  )}
-                  aria-label={`Tocar som de ${sound.name}`}
-                  disabled={loadingSound !== null || (recordingStatus.isRecording && recordingStatus.soundName !== sound.name)}
-                >
-                  <div>
-                    <h3 className={cn("text-xl font-semibold", selectedCategory.textColor)}>{sound.name}</h3>
-                    <p className={cn(selectedCategory.textColor, "opacity-70")}>{sound.description}</p>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    {isCustomAudioEnabled && (
-                      <>
-                        <button 
+              {selectedCategory.sounds.map((sound) => {
+                const isDisabled = loadingSound !== null || (recordingStatus.isRecording && recordingStatus.soundName !== sound.name);
+                return (
+                  <div
+                    key={sound.name}
+                    role="button"
+                    tabIndex={isDisabled ? -1 : 0}
+                    aria-disabled={isDisabled}
+                    aria-label={`Tocar som de ${sound.name}`}
+                    onClick={() => {
+                      if (isDisabled) return;
+                      playSound(sound.name, sound.soundPrompt);
+                    }}
+                    onKeyDown={(e) => {
+                      if ((e.key === 'Enter' || e.key === ' ') && !isDisabled) {
+                        e.preventDefault();
+                        playSound(sound.name, sound.soundPrompt);
+                      }
+                    }}
+                    className={cn(
+                      "w-full flex items-center justify-between p-4 rounded-xl text-left transition-all duration-200 ease-in-out transform",
+                      selectedCategory.color,
+                      "focus:outline-none",
+                      isDisabled
+                        ? "opacity-50 cursor-wait"
+                        : "cursor-pointer hover:scale-[1.02] hover:shadow-lg active:scale-95 focus:ring-2 focus:ring-offset-2 focus:ring-ring"
+                    )}
+                  >
+                    <div>
+                      <h3 className={cn("text-xl font-semibold", selectedCategory.textColor)}>{sound.name}</h3>
+                      <p className={cn(selectedCategory.textColor, "opacity-70")}>{sound.description}</p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      {isCustomAudioEnabled && (
+                        <>
+                          <button
                             onClick={(e) => handleRecordClick(e, sound.name)}
                             className={cn(
-                                "p-2 rounded-full transition-colors disabled:opacity-50",
-                                recordingStatus.soundName === sound.name ? "bg-red-500/20" : "hover:bg-black/10"
+                              "p-2 rounded-full transition-colors disabled:opacity-50",
+                              recordingStatus.soundName === sound.name ? "bg-red-500/20" : "hover:bg-black/10"
                             )}
                             aria-label={recordingStatus.isRecording && recordingStatus.soundName === sound.name ? `Parar gravação de ${sound.name}` : `Gravar som para ${sound.name}`}
                             disabled={loadingSound !== null || (recordingStatus.isRecording && recordingStatus.soundName !== sound.name)}
-                        >
+                          >
                             {recordingStatus.isRecording && recordingStatus.soundName === sound.name ? (
-                                <StopCircle className="w-6 h-6 text-red-600 animate-pulse" />
+                              <StopCircle className="w-6 h-6 text-red-600 animate-pulse" />
                             ) : (
-                                <Mic className={cn("w-6 h-6", selectedCategory.iconColor)} />
+                              <Mic className={cn("w-6 h-6", selectedCategory.iconColor)} />
                             )}
-                        </button>
-                        
-                        <button
-                          onClick={(e) => handleUploadClick(e, sound.name)}
-                          className="p-2 rounded-full transition-colors hover:bg-black/10 disabled:opacity-50"
-                          aria-label={`Fazer upload de som para ${sound.name}`}
-                          disabled={loadingSound !== null || recordingStatus.isRecording}
-                        >
-                          <Upload className={cn("w-6 h-6", selectedCategory.iconColor)} />
-                        </button>
-                      </>
-                    )}
+                          </button>
 
-                    {loadingSound === sound.name ? (
+                          <button
+                            onClick={(e) => handleUploadClick(e, sound.name)}
+                            className="p-2 rounded-full transition-colors hover:bg-black/10 disabled:opacity-50"
+                            aria-label={`Fazer upload de som para ${sound.name}`}
+                            disabled={loadingSound !== null || recordingStatus.isRecording}
+                          >
+                            <Upload className={cn("w-6 h-6", selectedCategory.iconColor)} />
+                          </button>
+                        </>
+                      )}
+
+                      {loadingSound === sound.name ? (
                         <Loader2 className={cn("w-8 h-8 flex-shrink-0 animate-spin", selectedCategory.iconColor)} />
-                    ) : playingSound === sound.name ? (
+                      ) : playingSound === sound.name ? (
                         <Square className={cn("w-8 h-8 flex-shrink-0", selectedCategory.iconColor)} />
-                    ) : (
+                      ) : (
                         <Volume2 className={cn("w-8 h-8 flex-shrink-0", selectedCategory.iconColor)} />
-                    )}
+                      )}
+                    </div>
                   </div>
-                </button>
-              ))}
+                );
+              })}
             </div>
           </CardContent>
         </Card>
