@@ -33,7 +33,7 @@ function FollowTheLightGame() {
         if (cachedSound) {
           setGameSound(cachedSound);
         } else {
-          const result = await synthesizeSpeech("som de um 'swoosh' ou 'whoosh' espacial, como um cometa passando");
+          const result = await synthesizeSpeech("Uma única nota de xilofone, tocada de forma suave e com eco, criando um som mágico.");
           if (result.audioDataUri) {
             setGameSound(result.audioDataUri);
             try {
