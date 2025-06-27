@@ -15,6 +15,7 @@ import {
   Square,
   Mic,
   StopCircle,
+  Upload,
 } from 'lucide-react';
 import type { Icon as LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -118,6 +119,8 @@ export default function SoundDiscoveryPage() {
   const [recordingStatus, setRecordingStatus] = useState<{ soundName: string | null, isRecording: boolean }>({ soundName: null, isRecording: false });
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [uploadTarget, setUploadTarget] = useState<string | null>(null);
 
   const handleSelectCategory = async (category: Category) => {
     setSelectedCategory(category);
@@ -183,7 +186,6 @@ export default function SoundDiscoveryPage() {
 
     setPlayingSound(null);
 
-    // 1. Check for custom recorded audio first
     const customAudioUrl = customAudio[soundName];
     if (customAudioUrl) {
       if (audioRef.current) {
@@ -194,7 +196,6 @@ export default function SoundDiscoveryPage() {
       return;
     }
     
-    // 2. Fallback to AI-generated audio
     try {
       let audioDataUri = audioCache[soundName];
 
@@ -275,13 +276,48 @@ export default function SoundDiscoveryPage() {
     }
   }
 
+  const handleUploadClick = (e: React.MouseEvent, soundName: string) => {
+    e.stopPropagation();
+    setUploadTarget(soundName);
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && uploadTarget) {
+      if (file.type.startsWith('audio/')) {
+        const audioUrl = URL.createObjectURL(file);
+        setCustomAudio((prev) => ({ ...prev, [uploadTarget]: audioUrl }));
+        toast({
+          title: "Upload Concluído!",
+          description: "Seu áudio foi carregado com sucesso.",
+        });
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Arquivo Inválido",
+          description: "Por favor, selecione um arquivo de áudio.",
+        });
+      }
+    }
+    if (e.target) e.target.value = '';
+    setUploadTarget(null);
+  };
+
   return (
     <div className="w-full">
       <audio ref={audioRef} onEnded={() => setPlayingSound(null)} />
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={handleFileChange}
+        className="hidden"
+        accept="audio/*"
+      />
       <div className="mb-8">
         <h1 className="text-4xl font-bold font-headline text-foreground">Descobrindo Sons</h1>
         <p className="text-lg text-muted-foreground mt-2">
-          Explore um mundo de sons! Toque para ouvir ou segure para gravar sua própria voz.
+          Explore um mundo de sons! Toque para ouvir, grave sua voz ou envie um áudio personalizado.
         </p>
       </div>
 
@@ -304,7 +340,7 @@ export default function SoundDiscoveryPage() {
               </div>
             ) : (
               <>
-                <p className={cn("mb-6", selectedCategory.textColor, "opacity-80")}>Toque em uma linha para ouvir ou no microfone para gravar.</p>
+                <p className={cn("mb-6", selectedCategory.textColor, "opacity-80")}>Toque na linha para ouvir, no microfone para gravar, ou na nuvem para enviar um áudio.</p>
                 <div className="space-y-4">
                   {selectedCategory.sounds.map((sound) => (
                     <button
@@ -337,6 +373,15 @@ export default function SoundDiscoveryPage() {
                             ) : (
                                 <Mic className={cn("w-6 h-6", selectedCategory.iconColor)} />
                             )}
+                        </button>
+                        
+                        <button
+                          onClick={(e) => handleUploadClick(e, sound.name)}
+                          className="p-2 rounded-full transition-colors hover:bg-black/10 disabled:opacity-50"
+                          aria-label={`Fazer upload de som para ${sound.name}`}
+                          disabled={loadingSound !== null || loadingCategory || recordingStatus.isRecording}
+                        >
+                          <Upload className={cn("w-6 h-6", selectedCategory.iconColor)} />
                         </button>
 
                         {loadingSound === sound.name ? (
