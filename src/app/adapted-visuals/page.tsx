@@ -70,7 +70,11 @@ function NeonPainting() {
           const result = await synthesizeSpeech("O som de um giz de cera riscando suavemente sobre uma folha de papel.");
           if (result.audioDataUri) {
             setDrawingSound(result.audioDataUri);
-            localStorage.setItem('drawingSoundCache', result.audioDataUri);
+            try {
+              localStorage.setItem('drawingSoundCache', result.audioDataUri);
+            } catch (error) {
+              console.warn('Failed to cache drawing sound:', error);
+            }
           } else {
             throw new Error("Não foi possível gerar o áudio.");
           }

@@ -244,11 +244,16 @@ export default function SoundDiscoveryPage() {
             setCustomAudio(newCustomAudio);
             try {
               localStorage.setItem('customAudio', JSON.stringify(newCustomAudio));
+              toast({ title: "Gravação Salva!", description: "Seu áudio foi salvo com sucesso."});
             } catch (e) {
-              console.warn("Could not save custom audio to localStorage.", e);
+              console.warn("Could not save custom audio to localStorage. Storage might be full.", e);
+              toast({
+                variant: "destructive",
+                title: "Erro de Armazenamento",
+                description: "Não foi possível salvar sua gravação. O armazenamento pode estar cheio.",
+              });
             }
             stream.getTracks().forEach(track => track.stop());
-            toast({ title: "Gravação Salva!", description: "Seu áudio foi salvo com sucesso."});
         };
         
         recorder.start();
@@ -289,13 +294,18 @@ export default function SoundDiscoveryPage() {
         setCustomAudio(newCustomAudio);
         try {
           localStorage.setItem('customAudio', JSON.stringify(newCustomAudio));
+          toast({
+            title: "Upload Concluído!",
+            description: "Seu áudio foi carregado com sucesso.",
+          });
         } catch (e) {
           console.warn("Could not save custom audio to localStorage.", e);
+          toast({
+            variant: "destructive",
+            title: "Erro de Armazenamento",
+            description: "Não foi possível salvar o arquivo de áudio. O armazenamento pode estar cheio.",
+          });
         }
-        toast({
-          title: "Upload Concluído!",
-          description: "Seu áudio foi carregado com sucesso.",
-        });
       } else {
         toast({
           variant: "destructive",

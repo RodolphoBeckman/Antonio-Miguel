@@ -54,7 +54,11 @@ function TouchTheSoundGame() {
           const result = await synthesizeSpeech("Som de um clique digital curto e agradável.");
           if (result.audioDataUri) {
             setTouchSound(result.audioDataUri);
-            localStorage.setItem('touchGameSound', result.audioDataUri);
+            try {
+              localStorage.setItem('touchGameSound', result.audioDataUri);
+            } catch (error) {
+              console.warn('Failed to cache touch sound:', error);
+            }
           } else {
             throw new Error("Não foi possível gerar o áudio do toque.");
           }
