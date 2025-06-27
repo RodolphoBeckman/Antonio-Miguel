@@ -22,6 +22,7 @@ import { useToast } from "@/hooks/use-toast";
 type Sound = {
   name: string;
   description: string;
+  soundPrompt: string;
 };
 
 type Category = {
@@ -43,9 +44,9 @@ const soundData: Category[] = [
     textColor: 'text-green-900 dark:text-green-200',
     iconColor: 'text-green-600 dark:text-green-400',
     sounds: [
-      { name: 'Chuva', description: 'O som calmante da chuva caindo.' },
-      { name: 'Vento', description: 'O som do vento soprando suavemente.' },
-      { name: 'Pássaros', description: 'O canto alegre dos pássaros pela manhã.' },
+      { name: 'Chuva', description: 'O som calmante da chuva caindo.', soundPrompt: 'Som de chuva suave.' },
+      { name: 'Vento', description: 'O som do vento soprando suavemente.', soundPrompt: 'O som do vento assobiando.' },
+      { name: 'Pássaros', description: 'O canto alegre dos pássaros pela manhã.', soundPrompt: 'Piu piu piu!' },
     ],
   },
   {
@@ -56,9 +57,9 @@ const soundData: Category[] = [
     textColor: 'text-orange-900 dark:text-orange-200',
     iconColor: 'text-orange-600 dark:text-orange-400',
     sounds: [
-      { name: 'Cachorro', description: 'O latido amigável de um cachorro.' },
-      { name: 'Gato', description: 'O miado suave de um gato.' },
-      { name: 'Vaca', description: 'O mugido de uma vaca no pasto.' },
+      { name: 'Cachorro', description: 'O latido amigável de um cachorro.', soundPrompt: 'Au au! Au au!' },
+      { name: 'Gato', description: 'O miado suave de um gato.', soundPrompt: 'Miau!' },
+      { name: 'Vaca', description: 'O mugido de uma vaca no pasto.', soundPrompt: 'Muuu!' },
     ],
   },
   {
@@ -69,9 +70,9 @@ const soundData: Category[] = [
     textColor: 'text-sky-900 dark:text-sky-200',
     iconColor: 'text-sky-600 dark:text-sky-400',
     sounds: [
-      { name: 'Telefone', description: 'O som de um telefone antigo tocando.' },
-      { name: 'Carro', description: 'O som de um carro passando na rua.' },
-      { name: 'Relógio', description: 'O tique-taque de um relógio de parede.' },
+      { name: 'Telefone', description: 'O som de um telefone antigo tocando.', soundPrompt: 'Trim-trim-trim!' },
+      { name: 'Carro', description: 'O som de um carro passando na rua.', soundPrompt: 'Vruuum!' },
+      { name: 'Relógio', description: 'O tique-taque de um relógio de parede.', soundPrompt: 'Tique-taque, tique-taque.' },
     ],
   },
   {
@@ -82,9 +83,9 @@ const soundData: Category[] = [
     textColor: 'text-purple-900 dark:text-purple-200',
     iconColor: 'text-purple-600 dark:text-purple-400',
     sounds: [
-      { name: 'Violão', description: 'O som das cordas de um violão.' },
-      { name: 'Piano', description: 'Uma melodia suave tocada no piano.' },
-      { name: 'Bateria', description: 'O ritmo contagiante de uma bateria.' },
+      { name: 'Violão', description: 'O som das cordas de um violão.', soundPrompt: 'Um dedilhado suave de violão.' },
+      { name: 'Piano', description: 'Uma melodia suave tocada no piano.', soundPrompt: 'Uma melodia calma de piano.' },
+      { name: 'Bateria', description: 'O ritmo contagiante de uma bateria.', soundPrompt: 'Uma batida de bateria animada.' },
     ],
   },
   {
@@ -95,9 +96,9 @@ const soundData: Category[] = [
     textColor: 'text-yellow-900 dark:text-yellow-200',
     iconColor: 'text-yellow-600 dark:text-yellow-400',
     sounds: [
-      { name: 'Risada', description: 'O som de uma criança rindo feliz.' },
-      { name: 'Choro', description: 'O som de um bebê chorando.' },
-      { name: 'Surpresa', description: 'Um som de espanto e surpresa.' },
+      { name: 'Risada', description: 'O som de uma criança rindo feliz.', soundPrompt: 'Ha ha ha! Uma risada de criança.' },
+      { name: 'Choro', description: 'O som de um bebê chorando.', soundPrompt: 'Buááá! Um choro de bebê.' },
+      { name: 'Surpresa', description: 'Um som de espanto e surpresa.', soundPrompt: 'Oh! Uau!' },
     ],
   },
 ];
@@ -129,7 +130,7 @@ export default function SoundDiscoveryPage() {
     setLoadingCategory(true);
     try {
       const fetchPromises = soundsToFetch.map((sound) =>
-        synthesizeSpeech(`${sound.name}. ${sound.description}`).then(
+        synthesizeSpeech(sound.soundPrompt).then(
           (result) => ({
             name: sound.name,
             audioDataUri: result.audioDataUri,
@@ -166,7 +167,7 @@ export default function SoundDiscoveryPage() {
     setPlayingSound(null);
   };
 
-  const playSound = async (soundName: string, soundDescription: string) => {
+  const playSound = async (soundName: string, soundPrompt: string) => {
     if (audioRef.current && playingSound === soundName) {
       audioRef.current.pause();
       setPlayingSound(null);
@@ -180,9 +181,7 @@ export default function SoundDiscoveryPage() {
 
       if (!audioDataUri) {
         setLoadingSound(soundName);
-        const result = await synthesizeSpeech(
-          `${soundName}. ${soundDescription}`
-        );
+        const result = await synthesizeSpeech(soundPrompt);
         audioDataUri = result.audioDataUri;
         setAudioCache((prev) => ({ ...prev, [soundName]: audioDataUri }));
       }
@@ -238,7 +237,7 @@ export default function SoundDiscoveryPage() {
                   {selectedCategory.sounds.map((sound) => (
                     <button
                       key={sound.name}
-                      onClick={() => playSound(sound.name, sound.description)}
+                      onClick={() => playSound(sound.name, sound.soundPrompt)}
                       className={cn(
                         "w-full flex items-center justify-between p-4 rounded-xl text-left transition-all duration-200 ease-in-out transform hover:scale-[1.02] hover:shadow-lg active:scale-95 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-wait",
                         selectedCategory.color,
