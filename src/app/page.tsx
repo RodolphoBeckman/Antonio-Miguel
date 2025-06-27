@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
@@ -11,9 +11,12 @@ import {
   Smile,
   Volume2,
   X,
+  Loader2,
+  Square,
 } from 'lucide-react';
 import type { Icon as LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { synthesizeSpeech } from '@/ai/flows/synthesize-speech';
 
 type Sound = {
   name: string;
@@ -102,6 +105,11 @@ export default function SoundDiscoveryPage() {
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(
     null
   );
+  const [playingSound, setPlayingSound] = useState<string | null>(null);
+  const [loadingSound, setLoadingSound] = useState<string | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [audioCache, setAudioCache] = useState<Record<string, string>>({});
+
 
   const handleSelectCategory = (category: Category) => {
     setSelectedCategory(category);
@@ -109,16 +117,45 @@ export default function SoundDiscoveryPage() {
 
   const handleClearSelection = () => {
     setSelectedCategory(null);
+    if (audioRef.current) {
+      audioRef.current.pause();
+    }
+    setPlayingSound(null);
   };
 
-  // Dummy function for sound playback
-  const playSound = (soundName: string) => {
-    console.log(`Playing sound: ${soundName}`);
-    // In a real app, you would use Web Audio API or a library to play a sound file.
-  }
+  const playSound = async (soundName: string, soundDescription: string) => {
+    if (audioRef.current && playingSound === soundName) {
+      audioRef.current.pause();
+      setPlayingSound(null);
+      return;
+    }
+
+    setLoadingSound(soundName);
+    setPlayingSound(null);
+
+    try {
+      let audioDataUri = audioCache[soundName];
+      if (!audioDataUri) {
+        const result = await synthesizeSpeech(`${soundName}. ${soundDescription}`);
+        audioDataUri = result.audioDataUri;
+        setAudioCache((prev) => ({ ...prev, [soundName]: audioDataUri }));
+      }
+
+      if (audioRef.current) {
+        audioRef.current.src = audioDataUri;
+        audioRef.current.play().catch((e) => console.error("Error playing audio:", e));
+        setPlayingSound(soundName);
+      }
+    } catch (error) {
+      console.error('Error synthesizing speech:', error);
+    } finally {
+      setLoadingSound(null);
+    }
+  };
 
   return (
     <div className="w-full">
+      <audio ref={audioRef} onEnded={() => setPlayingSound(null)} />
       <div className="mb-8">
         <h1 className="text-4xl font-bold font-headline text-foreground">Descobrindo Sons</h1>
         <p className="text-lg text-muted-foreground mt-2">
@@ -143,15 +180,22 @@ export default function SoundDiscoveryPage() {
               {selectedCategory.sounds.map((sound) => (
                 <button
                   key={sound.name}
-                  onClick={() => playSound(sound.name)}
-                  className="w-full flex items-center justify-between p-4 bg-background/50 dark:bg-background/20 rounded-xl text-left transition-all duration-200 ease-in-out transform hover:scale-[1.02] hover:shadow-lg active:scale-95 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                  onClick={() => playSound(sound.name, sound.description)}
+                  className="w-full flex items-center justify-between p-4 bg-background/50 dark:bg-background/20 rounded-xl text-left transition-all duration-200 ease-in-out transform hover:scale-[1.02] hover:shadow-lg active:scale-95 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:opacity-50"
                   aria-label={`Tocar som de ${sound.name}`}
+                  disabled={loadingSound !== null}
                 >
                   <div>
                     <h3 className={cn("text-xl font-semibold", selectedCategory.textColor)}>{sound.name}</h3>
                     <p className={cn(selectedCategory.textColor, "opacity-70")}>{sound.description}</p>
                   </div>
-                  <Volume2 className={cn("w-8 h-8 flex-shrink-0", selectedCategory.iconColor)} />
+                  {loadingSound === sound.name ? (
+                    <Loader2 className={cn("w-8 h-8 flex-shrink-0 animate-spin", selectedCategory.iconColor)} />
+                  ) : playingSound === sound.name ? (
+                    <Square className={cn("w-8 h-8 flex-shrink-0", selectedCategory.iconColor)} />
+                  ) : (
+                    <Volume2 className={cn("w-8 h-8 flex-shrink-0", selectedCategory.iconColor)} />
+                  )}
                 </button>
               ))}
             </div>
