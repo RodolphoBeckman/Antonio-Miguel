@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import {
+  Home,
   Ear,
   Hand,
   Sparkles,
@@ -25,7 +26,8 @@ import {
 import { cn } from '@/lib/utils';
 
 const navItems = [
-  { href: '/', label: 'Descobrindo Sons', icon: Ear },
+  { href: '/', label: 'Painel Principal', icon: Home },
+  { href: '/sound-discovery', label: 'Descobrindo Sons', icon: Ear },
   { href: '/tactile-games', label: 'Toque e Movimento', icon: Hand },
   { href: '/adapted-visuals', label: 'Brilho Mágico', icon: Sparkles },
   { href: '/story-time', label: 'Histórias com Sentidos', icon: BookOpen },
