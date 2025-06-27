@@ -1,0 +1,27 @@
+{
+  "name": "Antonio Miguel",
+  "short_name": "Antonio Miguel",
+  "description": "Terapia Lúdica Multissensorial para Crianças com Deficiência Visual",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "landscape",
+  "background_color": "#FDFBFA",
+  "theme_color": "#FA682E",
+  "icons": [
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
