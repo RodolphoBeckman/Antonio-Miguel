@@ -44,9 +44,9 @@ const soundData: Category[] = [
     textColor: 'text-green-900 dark:text-green-200',
     iconColor: 'text-green-600 dark:text-green-400',
     sounds: [
-      { name: 'Chuva', description: 'O som calmante da chuva caindo.', soundPrompt: 'Som de chuva suave e relaxante.' },
-      { name: 'Vento', description: 'O som do vento soprando suavemente.', soundPrompt: 'O som do vento assobiando entre as árvores.' },
-      { name: 'Pássaros', description: 'O canto alegre dos pássaros pela manhã.', soundPrompt: 'O som de pássaros cantando alegremente: Piu piu piu!' },
+      { name: 'Chuva', description: 'O som calmante da chuva caindo.', soundPrompt: 'O som de chuva suave e relaxante, com gotas de água caindo.' },
+      { name: 'Vento', description: 'O som do vento soprando suavemente.', soundPrompt: 'O som do vento assobiando suavemente entre as árvores.' },
+      { name: 'Pássaros', description: 'O canto alegre dos pássaros pela manhã.', soundPrompt: 'O som de vários pássaros cantando alegremente em uma floresta.' },
     ],
   },
   {
@@ -57,9 +57,9 @@ const soundData: Category[] = [
     textColor: 'text-orange-900 dark:text-orange-200',
     iconColor: 'text-orange-600 dark:text-orange-400',
     sounds: [
-      { name: 'Cachorro', description: 'O latido amigável de um cachorro.', soundPrompt: 'O som de um cachorro latindo feliz: Au au! Au au!' },
-      { name: 'Gato', description: 'O miado suave de um gato.', soundPrompt: 'O som de um gato miando: Miau!' },
-      { name: 'Vaca', description: 'O mugido de uma vaca no pasto.', soundPrompt: 'O som de uma vaca mugindo: Muuu!' },
+      { name: 'Cachorro', description: 'O latido amigável de um cachorro.', soundPrompt: 'O som de um cachorro grande latindo de forma amigável.' },
+      { name: 'Gato', description: 'O miado suave de um gato.', soundPrompt: 'O som de um gato doméstico miando de forma suave.' },
+      { name: 'Vaca', description: 'O mugido de uma vaca no pasto.', soundPrompt: 'O som de uma vaca mugindo em um pasto distante.' },
     ],
   },
   {
@@ -70,9 +70,9 @@ const soundData: Category[] = [
     textColor: 'text-sky-900 dark:text-sky-200',
     iconColor: 'text-sky-600 dark:text-sky-400',
     sounds: [
-      { name: 'Telefone', description: 'O som de um telefone antigo tocando.', soundPrompt: 'O som de um telefone antigo tocando: Trim-trim-trim!' },
-      { name: 'Carro', description: 'O som de um carro passando na rua.', soundPrompt: 'O som de um carro acelerando: Vruuum!' },
-      { name: 'Relógio', description: 'O tique-taque de um relógio de parede.', soundPrompt: 'O som de um relógio fazendo: Tique-taque, tique-taque.' },
+      { name: 'Telefone', description: 'O som de um telefone antigo tocando.', soundPrompt: 'O som de um telefone de disco antigo tocando repetidamente.' },
+      { name: 'Carro', description: 'O som de um carro passando na rua.', soundPrompt: 'O som de um motor de carro acelerando e passando rapidamente.' },
+      { name: 'Relógio', description: 'O tique-taque de um relógio de parede.', soundPrompt: 'O som contínuo e ritmado de um relógio de parede antigo.' },
     ],
   },
   {
@@ -83,9 +83,9 @@ const soundData: Category[] = [
     textColor: 'text-purple-900 dark:text-purple-200',
     iconColor: 'text-purple-600 dark:text-purple-400',
     sounds: [
-      { name: 'Violão', description: 'O som das cordas de um violão.', soundPrompt: 'Um dedilhado suave com um violão acústico.' },
-      { name: 'Piano', description: 'Uma melodia suave tocada no piano.', soundPrompt: 'Uma melodia calma e bonita tocada no piano.' },
-      { name: 'Bateria', description: 'O ritmo contagiante de uma bateria.', soundPrompt: 'Uma batida de bateria animada e contagiante.' },
+      { name: 'Violão', description: 'O som das cordas de um violão.', soundPrompt: 'Um dedilhado suave e melódico com um violão acústico.' },
+      { name: 'Piano', description: 'Uma melodia suave tocada no piano.', soundPrompt: 'Uma melodia calma, bonita e inspiradora tocada no piano.' },
+      { name: 'Bateria', description: 'O ritmo contagiante de uma bateria.', soundPrompt: 'Uma batida de bateria animada, com pratos e tambores, bem contagiante.' },
     ],
   },
   {
@@ -96,9 +96,9 @@ const soundData: Category[] = [
     textColor: 'text-yellow-900 dark:text-yellow-200',
     iconColor: 'text-yellow-600 dark:text-yellow-400',
     sounds: [
-      { name: 'Risada', description: 'O som de uma criança rindo feliz.', soundPrompt: 'O som de uma criança dando uma gargalhada feliz: Ha ha ha!' },
-      { name: 'Choro', description: 'O som de um bebê chorando.', soundPrompt: 'O som de um bebê chorando: Buááá!' },
-      { name: 'Surpresa', description: 'Um som de espanto e surpresa.', soundPrompt: 'Uma pessoa fazendo um som de surpresa: Oh! Uau!' },
+      { name: 'Risada', description: 'O som de uma criança rindo feliz.', soundPrompt: 'Uma criança dando uma gargalhada alta e contagiante.' },
+      { name: 'Choro', description: 'O som de um bebê chorando.', soundPrompt: 'O som de um bebê chorando, procurando por atenção.' },
+      { name: 'Surpresa', description: 'Um som de espanto e surpresa.', soundPrompt: 'Um som agudo e rápido de surpresa, como um grito de espanto.' },
     ],
   },
 ];
