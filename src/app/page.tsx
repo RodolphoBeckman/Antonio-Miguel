@@ -17,6 +17,7 @@ import {
 import type { Icon as LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { synthesizeSpeech } from '@/ai/flows/synthesize-speech';
+import { useToast } from "@/hooks/use-toast";
 
 type Sound = {
   name: string;
@@ -102,17 +103,59 @@ const soundData: Category[] = [
 ];
 
 export default function SoundDiscoveryPage() {
-  const [selectedCategory, setSelectedCategory] = useState<Category | null>(
-    null
-  );
+  const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [playingSound, setPlayingSound] = useState<string | null>(null);
   const [loadingSound, setLoadingSound] = useState<string | null>(null);
+  const [loadingCategory, setLoadingCategory] = useState<boolean>(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [audioCache, setAudioCache] = useState<Record<string, string>>({});
+  const { toast } = useToast();
 
-
-  const handleSelectCategory = (category: Category) => {
+  const handleSelectCategory = async (category: Category) => {
     setSelectedCategory(category);
+    if (audioRef.current) {
+      audioRef.current.pause();
+    }
+    setPlayingSound(null);
+
+    const soundsToFetch = category.sounds.filter(
+      (sound) => !audioCache[sound.name]
+    );
+
+    if (soundsToFetch.length === 0) {
+      return;
+    }
+
+    setLoadingCategory(true);
+    try {
+      const fetchPromises = soundsToFetch.map((sound) =>
+        synthesizeSpeech(`${sound.name}. ${sound.description}`).then(
+          (result) => ({
+            name: sound.name,
+            audioDataUri: result.audioDataUri,
+          })
+        )
+      );
+
+      const fetchedSounds = await Promise.all(fetchPromises);
+
+      const newCacheEntries = fetchedSounds.reduce((acc, sound) => {
+        acc[sound.name] = sound.audioDataUri;
+        return acc;
+      }, {} as Record<string, string>);
+
+      setAudioCache((prev) => ({ ...prev, ...newCacheEntries }));
+    } catch (error) {
+      console.error('Error pre-fetching category sounds:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Erro ao Carregar Sons',
+        description:
+          'Não foi possível carregar os sons para esta categoria. Por favor, tente novamente mais tarde.',
+      });
+    } finally {
+      setLoadingCategory(false);
+    }
   };
 
   const handleClearSelection = () => {
@@ -130,24 +173,32 @@ export default function SoundDiscoveryPage() {
       return;
     }
 
-    setLoadingSound(soundName);
     setPlayingSound(null);
 
     try {
       let audioDataUri = audioCache[soundName];
+
       if (!audioDataUri) {
-        const result = await synthesizeSpeech(`${soundName}. ${soundDescription}`);
+        setLoadingSound(soundName);
+        const result = await synthesizeSpeech(
+          `${soundName}. ${soundDescription}`
+        );
         audioDataUri = result.audioDataUri;
         setAudioCache((prev) => ({ ...prev, [soundName]: audioDataUri }));
       }
 
-      if (audioRef.current) {
+      if (audioRef.current && audioDataUri) {
         audioRef.current.src = audioDataUri;
-        audioRef.current.play().catch((e) => console.error("Error playing audio:", e));
+        audioRef.current.play().catch((e) => console.error('Error playing audio:', e));
         setPlayingSound(soundName);
       }
     } catch (error) {
       console.error('Error synthesizing speech:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro ao Tocar Som",
+        description: "Não foi possível gerar o áudio. Tente novamente.",
+      })
     } finally {
       setLoadingSound(null);
     }
@@ -164,7 +215,7 @@ export default function SoundDiscoveryPage() {
       </div>
 
       {selectedCategory ? (
-        <Card className={cn("shadow-lg rounded-2xl animate-in fade-in-50", selectedCategory.color)}>
+        <Card className={cn("shadow-lg rounded-2xl animate-in fade-in-50", selectedCategory.cardColor)}>
           <CardHeader className="flex flex-row items-center justify-between">
             <div className="flex items-center gap-4">
               <selectedCategory.icon className={cn("w-8 h-8", selectedCategory.iconColor)} />
@@ -175,30 +226,43 @@ export default function SoundDiscoveryPage() {
             </Button>
           </CardHeader>
           <CardContent>
-            <p className={cn("mb-6", selectedCategory.textColor, "opacity-80")}>Toque em uma linha para ouvir o som e aprender sobre ele.</p>
-            <div className="space-y-4">
-              {selectedCategory.sounds.map((sound) => (
-                <button
-                  key={sound.name}
-                  onClick={() => playSound(sound.name, sound.description)}
-                  className="w-full flex items-center justify-between p-4 bg-background/50 dark:bg-background/20 rounded-xl text-left transition-all duration-200 ease-in-out transform hover:scale-[1.02] hover:shadow-lg active:scale-95 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:opacity-50"
-                  aria-label={`Tocar som de ${sound.name}`}
-                  disabled={loadingSound !== null}
-                >
-                  <div>
-                    <h3 className={cn("text-xl font-semibold", selectedCategory.textColor)}>{sound.name}</h3>
-                    <p className={cn(selectedCategory.textColor, "opacity-70")}>{sound.description}</p>
-                  </div>
-                  {loadingSound === sound.name ? (
-                    <Loader2 className={cn("w-8 h-8 flex-shrink-0 animate-spin", selectedCategory.iconColor)} />
-                  ) : playingSound === sound.name ? (
-                    <Square className={cn("w-8 h-8 flex-shrink-0", selectedCategory.iconColor)} />
-                  ) : (
-                    <Volume2 className={cn("w-8 h-8 flex-shrink-0", selectedCategory.iconColor)} />
-                  )}
-                </button>
-              ))}
-            </div>
+            {loadingCategory ? (
+              <div className="flex flex-col items-center justify-center min-h-[20rem]">
+                <Loader2 className={cn("w-12 h-12 animate-spin", selectedCategory.iconColor)} />
+                <p className={cn("mt-4", selectedCategory.textColor, "opacity-80")}>Carregando sons da categoria...</p>
+              </div>
+            ) : (
+              <>
+                <p className={cn("mb-6", selectedCategory.textColor, "opacity-80")}>Toque em uma linha para ouvir o som e aprender sobre ele.</p>
+                <div className="space-y-4">
+                  {selectedCategory.sounds.map((sound) => (
+                    <button
+                      key={sound.name}
+                      onClick={() => playSound(sound.name, sound.description)}
+                      className={cn(
+                        "w-full flex items-center justify-between p-4 rounded-xl text-left transition-all duration-200 ease-in-out transform hover:scale-[1.02] hover:shadow-lg active:scale-95 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-wait",
+                        selectedCategory.color,
+                        "focus:ring-ring"
+                      )}
+                      aria-label={`Tocar som de ${sound.name}`}
+                      disabled={loadingSound !== null || loadingCategory}
+                    >
+                      <div>
+                        <h3 className={cn("text-xl font-semibold", selectedCategory.textColor)}>{sound.name}</h3>
+                        <p className={cn(selectedCategory.textColor, "opacity-70")}>{sound.description}</p>
+                      </div>
+                      {loadingSound === sound.name ? (
+                        <Loader2 className={cn("w-8 h-8 flex-shrink-0 animate-spin", selectedCategory.iconColor)} />
+                      ) : playingSound === sound.name ? (
+                        <Square className={cn("w-8 h-8 flex-shrink-0", selectedCategory.iconColor)} />
+                      ) : (
+                        <Volume2 className={cn("w-8 h-8 flex-shrink-0", selectedCategory.iconColor)} />
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
           </CardContent>
         </Card>
       ) : (
