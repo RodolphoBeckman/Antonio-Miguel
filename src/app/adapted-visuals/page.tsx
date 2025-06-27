@@ -8,32 +8,143 @@ import { synthesizeSpeech } from '@/ai/flows/synthesize-speech';
 import { useToast } from '@/hooks/use-toast';
 
 function FollowTheLightGame() {
+  const [isFullScreen, setIsFullScreen] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [gameSound, setGameSound] = useState<string | null>(null);
+  const [isLoadingSound, setIsLoadingSound] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const soundIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    if (!isFullScreen) {
+      if (soundIntervalRef.current) {
+        clearInterval(soundIntervalRef.current);
+        soundIntervalRef.current = null;
+      }
+      setIsPlaying(false);
+      return;
+    }
+
+    const generateSound = async () => {
+      setIsLoadingSound(true);
+      try {
+        const cachedSound = localStorage.getItem('followLightSoundCache');
+        if (cachedSound) {
+          setGameSound(cachedSound);
+        } else {
+          const result = await synthesizeSpeech("som de um 'swoosh' ou 'whoosh' espacial, como um cometa passando");
+          if (result.audioDataUri) {
+            setGameSound(result.audioDataUri);
+            try {
+              localStorage.setItem('followLightSoundCache', result.audioDataUri);
+            } catch (error) {
+              console.warn('Failed to cache game sound:', error);
+            }
+          } else {
+            throw new Error("Não foi possível gerar o áudio do jogo.");
+          }
+        }
+      } catch (error) {
+        console.error('Error generating game sound:', error);
+        toast({
+          variant: 'destructive',
+          title: 'Erro ao carregar som',
+          description: 'Não foi possível carregar o som do jogo. Tente novamente.',
+        });
+      } finally {
+        setIsLoadingSound(false);
+      }
+    };
+
+    generateSound();
+
+    return () => {
+      if (soundIntervalRef.current) {
+        clearInterval(soundIntervalRef.current);
+      }
+    };
+  }, [isFullScreen, toast]);
+
+  useEffect(() => {
+    if (isPlaying && gameSound) {
+      soundIntervalRef.current = setInterval(() => {
+        if (audioRef.current) {
+          audioRef.current.currentTime = 0;
+          audioRef.current.play().catch(err => console.error("Audio play failed:", err));
+        }
+      }, 2000);
+    } else {
+      if (soundIntervalRef.current) {
+        clearInterval(soundIntervalRef.current);
+        soundIntervalRef.current = null;
+      }
+    }
+    return () => {
+      if (soundIntervalRef.current) {
+        clearInterval(soundIntervalRef.current);
+      }
+    }
+  }, [isPlaying, gameSound]);
+
+
+  const openFullScreen = () => setIsFullScreen(true);
+  const closeFullScreen = () => setIsFullScreen(false);
+  const togglePlay = () => setIsPlaying(p => !p);
+
+  if (isFullScreen) {
+    return (
+      <div className="fixed inset-0 bg-black z-50 flex flex-col items-center justify-center animate-in fade-in-20">
+        <audio ref={audioRef} src={gameSound ?? undefined} />
+        
+        {isPlaying && (
+          <div className="absolute w-16 h-16 bg-yellow-300 rounded-full shadow-[0_0_30px_15px_rgba(253,244,152,0.7)] animate-light-follow" />
+        )}
+
+        <div className="absolute top-4 right-4 z-10">
+            <Button onClick={closeFullScreen} variant="secondary">
+                <X className="mr-2" /> Fechar
+            </Button>
+        </div>
+
+        <div className="absolute bottom-10 z-10">
+            <Button onClick={togglePlay} size="lg" disabled={isLoadingSound}>
+                {isLoadingSound ? 'Carregando som...' : (isPlaying ? 'Parar Jogo' : 'Iniciar Jogo')}
+            </Button>
+        </div>
+
+        <style jsx>{`
+          @keyframes light-follow {
+            0% { transform: translate(-40vw, -30vh) scale(1); }
+            25% { transform: translate(40vw, 30vh) scale(1.2); }
+            50% { transform: translate(10vw, -35vh) scale(0.8); }
+            75% { transform: translate(-35vw, 20vh) scale(1.1); }
+            100% { transform: translate(-40vw, -30vh) scale(1); }
+          }
+          .animate-light-follow {
+            animation: light-follow 8s ease-in-out infinite;
+          }
+        `}</style>
+      </div>
+    );
+  }
 
   return (
     <div className="p-4 bg-secondary rounded-xl text-center">
-      <div className={cn("relative w-full h-64 bg-black rounded-lg overflow-hidden my-4 flex items-center justify-center text-background", isPlaying ? '' : 'p-4')}>
-        {isPlaying ? (
-           <div className="absolute w-12 h-12 bg-yellow-300 rounded-full shadow-[0_0_20px_10px_rgba(253,244,152,0.7)] animate-light-follow" />
-        ) : (
-          <p className="text-xl">O jogo aparecerá aqui.</p>
-        )}
-      </div>
-      <Button onClick={() => setIsPlaying(p => !p)} size="lg">
-        {isPlaying ? 'Parar Jogo' : 'Iniciar Jogo'}
-      </Button>
-       <style jsx>{`
-        @keyframes light-follow {
-          0% { transform: translate(-150px, -80px); }
-          25% { transform: translate(150px, 80px); }
-          50% { transform: translate(80px, -100px); }
-          75% { transform: translate(-120px, 50px); }
-          100% { transform: translate(-150px, -80px); }
-        }
-        .animate-light-follow {
-          animation: light-follow 8s ease-in-out infinite;
-        }
-      `}</style>
+       <div 
+         className="relative w-full h-64 bg-black rounded-lg cursor-pointer overflow-hidden flex items-center justify-center group"
+         onClick={openFullScreen}
+         onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') openFullScreen(); }}
+         role="button"
+         tabIndex={0}
+         aria-label="Abrir Seguir a Luz em tela cheia"
+       >
+         <div className="text-center text-white p-4">
+            <TrendingUp size={48} className="mx-auto mb-4 text-primary transition-transform group-hover:scale-110" />
+            <p className="font-bold text-xl">Abrir Jogo</p>
+            <p className="text-muted-foreground">Toque para começar em tela cheia.</p>
+         </div>
+       </div>
     </div>
   );
 }
