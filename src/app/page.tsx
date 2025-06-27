@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
@@ -108,12 +108,20 @@ const soundData: Category[] = [
   },
 ];
 
+const blobToBase64 = (blob: Blob): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+};
+
 export default function SoundDiscoveryPage() {
   const { isCustomAudioEnabled, isInitialized } = useSettings();
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [playingSound, setPlayingSound] = useState<string | null>(null);
   const [loadingSound, setLoadingSound] = useState<string | null>(null);
-  const [loadingCategory, setLoadingCategory] = useState<boolean>(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [audioCache, setAudioCache] = useState<Record<string, string>>({});
   const { toast } = useToast();
@@ -125,51 +133,29 @@ export default function SoundDiscoveryPage() {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [uploadTarget, setUploadTarget] = useState<string | null>(null);
 
-  const handleSelectCategory = async (category: Category) => {
+  useEffect(() => {
+    try {
+      const storedCache = localStorage.getItem('audioCache');
+      if (storedCache) {
+        setAudioCache(JSON.parse(storedCache));
+      }
+      const storedCustomAudio = localStorage.getItem('customAudio');
+      if (storedCustomAudio) {
+        setCustomAudio(JSON.parse(storedCustomAudio));
+      }
+    } catch (error) {
+      console.error("Failed to load cache from localStorage", error);
+      localStorage.removeItem('audioCache');
+      localStorage.removeItem('customAudio');
+    }
+  }, []);
+
+  const handleSelectCategory = (category: Category) => {
     setSelectedCategory(category);
     if (audioRef.current) {
       audioRef.current.pause();
     }
     setPlayingSound(null);
-
-    const soundsToFetch = category.sounds.filter(
-      (sound) => !audioCache[sound.name]
-    );
-
-    if (soundsToFetch.length === 0) {
-      return;
-    }
-
-    setLoadingCategory(true);
-    try {
-      const fetchPromises = soundsToFetch.map((sound) =>
-        synthesizeSpeech(sound.soundPrompt).then(
-          (result) => ({
-            name: sound.name,
-            audioDataUri: result.audioDataUri,
-          })
-        )
-      );
-
-      const fetchedSounds = await Promise.all(fetchPromises);
-
-      const newCacheEntries = fetchedSounds.reduce((acc, sound) => {
-        acc[sound.name] = sound.audioDataUri;
-        return acc;
-      }, {} as Record<string, string>);
-
-      setAudioCache((prev) => ({ ...prev, ...newCacheEntries }));
-    } catch (error) {
-      console.error('Error pre-fetching category sounds:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Erro ao Carregar Sons',
-        description:
-          'Não foi possível carregar os sons para esta categoria. Por favor, tente novamente mais tarde.',
-      });
-    } finally {
-      setLoadingCategory(false);
-    }
   };
 
   const handleClearSelection = () => {
@@ -206,7 +192,18 @@ export default function SoundDiscoveryPage() {
         setLoadingSound(soundName);
         const result = await synthesizeSpeech(soundPrompt);
         audioDataUri = result.audioDataUri;
-        setAudioCache((prev) => ({ ...prev, [soundName]: audioDataUri }));
+        const newCache = { ...audioCache, [soundName]: audioDataUri };
+        setAudioCache(newCache);
+        try {
+            localStorage.setItem('audioCache', JSON.stringify(newCache));
+        } catch (e) {
+            console.warn("Could not save audio cache to localStorage. Storage might be full.", e);
+            toast({
+              variant: "destructive",
+              title: "Erro de Armazenamento",
+              description: "Não foi possível salvar o som. O armazenamento pode estar cheio.",
+            });
+        }
       }
 
       if (audioRef.current && audioDataUri) {
@@ -242,10 +239,16 @@ export default function SoundDiscoveryPage() {
             audioChunksRef.current.push(event.data);
         };
 
-        recorder.onstop = () => {
+        recorder.onstop = async () => {
             const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-            const audioUrl = URL.createObjectURL(audioBlob);
-            setCustomAudio((prev) => ({ ...prev, [soundName]: audioUrl }));
+            const audioUrl = await blobToBase64(audioBlob);
+            const newCustomAudio = { ...customAudio, [soundName]: audioUrl };
+            setCustomAudio(newCustomAudio);
+            try {
+              localStorage.setItem('customAudio', JSON.stringify(newCustomAudio));
+            } catch (e) {
+              console.warn("Could not save custom audio to localStorage.", e);
+            }
             stream.getTracks().forEach(track => track.stop());
             toast({ title: "Gravação Salva!", description: "Seu áudio foi salvo com sucesso."});
         };
@@ -285,12 +288,18 @@ export default function SoundDiscoveryPage() {
     fileInputRef.current?.click();
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file && uploadTarget) {
       if (file.type.startsWith('audio/')) {
-        const audioUrl = URL.createObjectURL(file);
-        setCustomAudio((prev) => ({ ...prev, [uploadTarget]: audioUrl }));
+        const audioUrl = await blobToBase64(file);
+        const newCustomAudio = { ...customAudio, [uploadTarget]: audioUrl };
+        setCustomAudio(newCustomAudio);
+        try {
+          localStorage.setItem('customAudio', JSON.stringify(newCustomAudio));
+        } catch (e) {
+          console.warn("Could not save custom audio to localStorage.", e);
+        }
         toast({
           title: "Upload Concluído!",
           description: "Seu áudio foi carregado com sucesso.",
@@ -360,74 +369,65 @@ export default function SoundDiscoveryPage() {
             </Button>
           </CardHeader>
           <CardContent>
-            {loadingCategory ? (
-              <div className="flex flex-col items-center justify-center min-h-[20rem]">
-                <Loader2 className={cn("w-12 h-12 animate-spin", selectedCategory.iconColor)} />
-                <p className={cn("mt-4", selectedCategory.textColor, "opacity-80")}>Carregando sons da categoria...</p>
-              </div>
-            ) : (
-              <>
-                <p className={cn("mb-6", selectedCategory.textColor, "opacity-80")}>{categoryDescription}</p>
-                <div className="space-y-4">
-                  {selectedCategory.sounds.map((sound) => (
-                    <button
-                      key={sound.name}
-                      onClick={() => playSound(sound.name, sound.soundPrompt)}
-                      className={cn(
-                        "w-full flex items-center justify-between p-4 rounded-xl text-left transition-all duration-200 ease-in-out transform hover:scale-[1.02] hover:shadow-lg active:scale-95 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-wait",
-                        selectedCategory.color,
-                        "focus:ring-ring"
-                      )}
-                      aria-label={`Tocar som de ${sound.name}`}
-                      disabled={loadingSound !== null || loadingCategory || (recordingStatus.isRecording && recordingStatus.soundName !== sound.name)}
-                    >
-                      <div>
-                        <h3 className={cn("text-xl font-semibold", selectedCategory.textColor)}>{sound.name}</h3>
-                        <p className={cn(selectedCategory.textColor, "opacity-70")}>{sound.description}</p>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        {isCustomAudioEnabled && (
-                          <>
-                            <button 
-                                onClick={(e) => handleRecordClick(e, sound.name)}
-                                className={cn(
-                                    "p-2 rounded-full transition-colors disabled:opacity-50",
-                                    recordingStatus.soundName === sound.name ? "bg-red-500/20" : "hover:bg-black/10"
-                                )}
-                                aria-label={recordingStatus.isRecording && recordingStatus.soundName === sound.name ? `Parar gravação de ${sound.name}` : `Gravar som para ${sound.name}`}
-                                disabled={loadingSound !== null || loadingCategory || (recordingStatus.isRecording && recordingStatus.soundName !== sound.name)}
-                            >
-                                {recordingStatus.isRecording && recordingStatus.soundName === sound.name ? (
-                                    <StopCircle className="w-6 h-6 text-red-600 animate-pulse" />
-                                ) : (
-                                    <Mic className={cn("w-6 h-6", selectedCategory.iconColor)} />
-                                )}
-                            </button>
-                            
-                            <button
-                              onClick={(e) => handleUploadClick(e, sound.name)}
-                              className="p-2 rounded-full transition-colors hover:bg-black/10 disabled:opacity-50"
-                              aria-label={`Fazer upload de som para ${sound.name}`}
-                              disabled={loadingSound !== null || loadingCategory || recordingStatus.isRecording}
-                            >
-                              <Upload className={cn("w-6 h-6", selectedCategory.iconColor)} />
-                            </button>
-                          </>
-                        )}
+            <p className={cn("mb-6", selectedCategory.textColor, "opacity-80")}>{categoryDescription}</p>
+            <div className="space-y-4">
+              {selectedCategory.sounds.map((sound) => (
+                <button
+                  key={sound.name}
+                  onClick={() => playSound(sound.name, sound.soundPrompt)}
+                  className={cn(
+                    "w-full flex items-center justify-between p-4 rounded-xl text-left transition-all duration-200 ease-in-out transform hover:scale-[1.02] hover:shadow-lg active:scale-95 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-wait",
+                    selectedCategory.color,
+                    "focus:ring-ring"
+                  )}
+                  aria-label={`Tocar som de ${sound.name}`}
+                  disabled={loadingSound !== null || (recordingStatus.isRecording && recordingStatus.soundName !== sound.name)}
+                >
+                  <div>
+                    <h3 className={cn("text-xl font-semibold", selectedCategory.textColor)}>{sound.name}</h3>
+                    <p className={cn(selectedCategory.textColor, "opacity-70")}>{sound.description}</p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    {isCustomAudioEnabled && (
+                      <>
+                        <button 
+                            onClick={(e) => handleRecordClick(e, sound.name)}
+                            className={cn(
+                                "p-2 rounded-full transition-colors disabled:opacity-50",
+                                recordingStatus.soundName === sound.name ? "bg-red-500/20" : "hover:bg-black/10"
+                            )}
+                            aria-label={recordingStatus.isRecording && recordingStatus.soundName === sound.name ? `Parar gravação de ${sound.name}` : `Gravar som para ${sound.name}`}
+                            disabled={loadingSound !== null || (recordingStatus.isRecording && recordingStatus.soundName !== sound.name)}
+                        >
+                            {recordingStatus.isRecording && recordingStatus.soundName === sound.name ? (
+                                <StopCircle className="w-6 h-6 text-red-600 animate-pulse" />
+                            ) : (
+                                <Mic className={cn("w-6 h-6", selectedCategory.iconColor)} />
+                            )}
+                        </button>
+                        
+                        <button
+                          onClick={(e) => handleUploadClick(e, sound.name)}
+                          className="p-2 rounded-full transition-colors hover:bg-black/10 disabled:opacity-50"
+                          aria-label={`Fazer upload de som para ${sound.name}`}
+                          disabled={loadingSound !== null || recordingStatus.isRecording}
+                        >
+                          <Upload className={cn("w-6 h-6", selectedCategory.iconColor)} />
+                        </button>
+                      </>
+                    )}
 
-                        {loadingSound === sound.name ? (
-                            <Loader2 className={cn("w-8 h-8 flex-shrink-0 animate-spin", selectedCategory.iconColor)} />
-                        ) : playingSound === sound.name ? (
-                            <Square className={cn("w-8 h-8 flex-shrink-0", selectedCategory.iconColor)} />
-                        ) : (
-                            <Volume2 className={cn("w-8 h-8 flex-shrink-0", selectedCategory.iconColor)} />
-                        )}
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              </>
-            )}
+                    {loadingSound === sound.name ? (
+                        <Loader2 className={cn("w-8 h-8 flex-shrink-0 animate-spin", selectedCategory.iconColor)} />
+                    ) : playingSound === sound.name ? (
+                        <Square className={cn("w-8 h-8 flex-shrink-0", selectedCategory.iconColor)} />
+                    ) : (
+                        <Volume2 className={cn("w-8 h-8 flex-shrink-0", selectedCategory.iconColor)} />
+                    )}
+                  </div>
+                </button>
+              ))}
+            </div>
           </CardContent>
         </Card>
       ) : (
