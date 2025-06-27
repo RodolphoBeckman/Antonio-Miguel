@@ -58,7 +58,7 @@ function NeonPainting() {
           setPencilSound(cachedSound);
         } else {
           // A short, crisp sound is better for this interaction
-          const result = await synthesizeSpeech("som de clique, como um pop");
+          const result = await synthesizeSpeech("Som de um clique digital curto e agradável.");
           if (result.audioDataUri) {
             setPencilSound(result.audioDataUri);
             localStorage.setItem('pencilSound', result.audioDataUri);
