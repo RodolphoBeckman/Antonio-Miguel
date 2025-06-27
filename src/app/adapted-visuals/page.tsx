@@ -166,9 +166,9 @@ function NeonPainting() {
   const [isLoadingSound, setIsLoadingSound] = useState(false);
   const { toast } = useToast();
   const [selectedColor, setSelectedColor] = useState(neonColors[0]);
+  const isDrawingRef = useRef(false);
 
   useEffect(() => {
-    // Only load sound when entering fullscreen mode
     if (!isFullScreen) return;
 
     const generateSound = async () => {
@@ -205,24 +205,24 @@ function NeonPainting() {
     generateSound();
   }, [isFullScreen, toast]);
 
-  const handlePaint = (e: React.MouseEvent<HTMLDivElement> | React.TouchEvent<HTMLDivElement>) => {
-    if (!canvasRef.current) return;
-    
-    const isTouchEvent = 'touches' in e;
+  const startDrawing = (e: React.MouseEvent<HTMLDivElement> | React.TouchEvent<HTMLDivElement>) => {
+    isDrawingRef.current = true;
+    draw(e);
+  };
 
-    if (isTouchEvent) {
-        e.preventDefault();
-    }
+  const stopDrawing = () => {
+    isDrawingRef.current = false;
+  };
+
+  const draw = (e: React.MouseEvent<HTMLDivElement> | React.TouchEvent<HTMLDivElement>) => {
+    if (!isDrawingRef.current || !canvasRef.current) return;
     
-    // For mousemove, only draw if the primary button is pressed. Mousedown and touchstart will always draw.
-    if (e.type === 'mousemove' && e.buttons !== 1) {
-      return;
-    }
+    e.preventDefault();
 
     const canvas = canvasRef.current;
     const rect = canvas.getBoundingClientRect();
     
-    const points = isTouchEvent ? Array.from((e as React.TouchEvent).touches) : [e as React.MouseEvent];
+    const points = 'touches' in e ? Array.from(e.touches) : [e];
 
     for (const point of points) {
         const x = point.clientX - rect.left;
@@ -244,6 +244,7 @@ function NeonPainting() {
     }
   };
 
+
   const openFullScreen = () => {
     setIsFullScreen(true);
   };
@@ -253,6 +254,7 @@ function NeonPainting() {
     if (canvasRef.current) {
         canvasRef.current.innerHTML = '';
     }
+    isDrawingRef.current = false;
   };
 
   if (isFullScreen) {
@@ -261,10 +263,14 @@ function NeonPainting() {
         <audio ref={audioRef} src={drawingSound ?? undefined} />
         <div 
           ref={canvasRef}
-          onMouseDown={handlePaint}
-          onMouseMove={handlePaint}
-          onTouchStart={handlePaint}
-          onTouchMove={handlePaint}
+          onMouseDown={startDrawing}
+          onMouseUp={stopDrawing}
+          onMouseLeave={stopDrawing}
+          onMouseMove={draw}
+          onTouchStart={startDrawing}
+          onTouchEnd={stopDrawing}
+          onTouchCancel={stopDrawing}
+          onTouchMove={draw}
           className="w-full h-full cursor-crosshair"
           aria-label="Área de pintura neon em tela cheia"
         />
