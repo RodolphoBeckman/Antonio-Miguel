@@ -51,7 +51,7 @@ function TouchTheSoundGame() {
         if (cachedSound) {
           setTouchSound(cachedSound);
         } else {
-          const result = await synthesizeSpeech("Um som de toque curto e agudo, como uma bolha estourando.");
+          const result = await synthesizeSpeech("Som de um clique digital curto e agradável.");
           if (result.audioDataUri) {
             setTouchSound(result.audioDataUri);
             localStorage.setItem('touchGameSound', result.audioDataUri);
