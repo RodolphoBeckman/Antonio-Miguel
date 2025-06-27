@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 import { AppShell } from '@/components/app-shell';
 import { Toaster } from '@/components/ui/toaster';
+import { SettingsProvider } from '@/context/settings-context';
 
 export const metadata: Metadata = {
   title: 'Antonio Miguel',
@@ -21,7 +22,9 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=PT+Sans:wght@400;700&display=swap" rel="stylesheet" />
       </head>
       <body className="font-body antialiased">
-        <AppShell>{children}</AppShell>
+        <SettingsProvider>
+          <AppShell>{children}</AppShell>
+        </SettingsProvider>
         <Toaster />
       </body>
     </html>

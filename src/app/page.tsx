@@ -21,6 +21,8 @@ import type { Icon as LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { synthesizeSpeech } from '@/ai/flows/synthesize-speech';
 import { useToast } from "@/hooks/use-toast";
+import { useSettings } from '@/context/settings-context';
+import { Skeleton } from '@/components/ui/skeleton';
 
 type Sound = {
   name: string;
@@ -107,6 +109,7 @@ const soundData: Category[] = [
 ];
 
 export default function SoundDiscoveryPage() {
+  const { isCustomAudioEnabled, isInitialized } = useSettings();
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [playingSound, setPlayingSound] = useState<string | null>(null);
   const [loadingSound, setLoadingSound] = useState<string | null>(null);
@@ -187,7 +190,7 @@ export default function SoundDiscoveryPage() {
     setPlayingSound(null);
 
     const customAudioUrl = customAudio[soundName];
-    if (customAudioUrl) {
+    if (isCustomAudioEnabled && customAudioUrl) {
       if (audioRef.current) {
         audioRef.current.src = customAudioUrl;
         audioRef.current.play().catch((e) => console.error('Error playing custom audio:', e));
@@ -303,6 +306,30 @@ export default function SoundDiscoveryPage() {
     if (e.target) e.target.value = '';
     setUploadTarget(null);
   };
+  
+  if (!isInitialized) {
+    return (
+        <div className="w-full">
+            <div className="mb-8">
+                <Skeleton className="h-10 w-3/4 mb-3" />
+                <Skeleton className="h-6 w-1/2" />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {[...Array(6)].map((_, i) => (
+                    <Skeleton key={i} className="h-48 w-full rounded-2xl" />
+                ))}
+            </div>
+        </div>
+    );
+  }
+
+  const mainDescription = isCustomAudioEnabled
+    ? 'Explore um mundo de sons! Toque para ouvir, grave sua voz ou envie um áudio personalizado.'
+    : 'Explore um mundo de sons! Toque em uma categoria para começar.';
+
+  const categoryDescription = isCustomAudioEnabled
+    ? 'Toque na linha para ouvir, no microfone para gravar, ou na nuvem para enviar um áudio.'
+    : 'Toque em uma linha para ouvir o som correspondente.';
 
   return (
     <div className="w-full">
@@ -317,7 +344,7 @@ export default function SoundDiscoveryPage() {
       <div className="mb-8">
         <h1 className="text-4xl font-bold font-headline text-foreground">Descobrindo Sons</h1>
         <p className="text-lg text-muted-foreground mt-2">
-          Explore um mundo de sons! Toque para ouvir, grave sua voz ou envie um áudio personalizado.
+          {mainDescription}
         </p>
       </div>
 
@@ -340,7 +367,7 @@ export default function SoundDiscoveryPage() {
               </div>
             ) : (
               <>
-                <p className={cn("mb-6", selectedCategory.textColor, "opacity-80")}>Toque na linha para ouvir, no microfone para gravar, ou na nuvem para enviar um áudio.</p>
+                <p className={cn("mb-6", selectedCategory.textColor, "opacity-80")}>{categoryDescription}</p>
                 <div className="space-y-4">
                   {selectedCategory.sounds.map((sound) => (
                     <button
@@ -359,30 +386,34 @@ export default function SoundDiscoveryPage() {
                         <p className={cn(selectedCategory.textColor, "opacity-70")}>{sound.description}</p>
                       </div>
                       <div className="flex items-center gap-3">
-                        <button 
-                            onClick={(e) => handleRecordClick(e, sound.name)}
-                            className={cn(
-                                "p-2 rounded-full transition-colors disabled:opacity-50",
-                                recordingStatus.soundName === sound.name ? "bg-red-500/20" : "hover:bg-black/10"
-                            )}
-                            aria-label={recordingStatus.isRecording && recordingStatus.soundName === sound.name ? `Parar gravação de ${sound.name}` : `Gravar som para ${sound.name}`}
-                            disabled={loadingSound !== null || loadingCategory || (recordingStatus.isRecording && recordingStatus.soundName !== sound.name)}
-                        >
-                            {recordingStatus.isRecording && recordingStatus.soundName === sound.name ? (
-                                <StopCircle className="w-6 h-6 text-red-600 animate-pulse" />
-                            ) : (
-                                <Mic className={cn("w-6 h-6", selectedCategory.iconColor)} />
-                            )}
-                        </button>
-                        
-                        <button
-                          onClick={(e) => handleUploadClick(e, sound.name)}
-                          className="p-2 rounded-full transition-colors hover:bg-black/10 disabled:opacity-50"
-                          aria-label={`Fazer upload de som para ${sound.name}`}
-                          disabled={loadingSound !== null || loadingCategory || recordingStatus.isRecording}
-                        >
-                          <Upload className={cn("w-6 h-6", selectedCategory.iconColor)} />
-                        </button>
+                        {isCustomAudioEnabled && (
+                          <>
+                            <button 
+                                onClick={(e) => handleRecordClick(e, sound.name)}
+                                className={cn(
+                                    "p-2 rounded-full transition-colors disabled:opacity-50",
+                                    recordingStatus.soundName === sound.name ? "bg-red-500/20" : "hover:bg-black/10"
+                                )}
+                                aria-label={recordingStatus.isRecording && recordingStatus.soundName === sound.name ? `Parar gravação de ${sound.name}` : `Gravar som para ${sound.name}`}
+                                disabled={loadingSound !== null || loadingCategory || (recordingStatus.isRecording && recordingStatus.soundName !== sound.name)}
+                            >
+                                {recordingStatus.isRecording && recordingStatus.soundName === sound.name ? (
+                                    <StopCircle className="w-6 h-6 text-red-600 animate-pulse" />
+                                ) : (
+                                    <Mic className={cn("w-6 h-6", selectedCategory.iconColor)} />
+                                )}
+                            </button>
+                            
+                            <button
+                              onClick={(e) => handleUploadClick(e, sound.name)}
+                              className="p-2 rounded-full transition-colors hover:bg-black/10 disabled:opacity-50"
+                              aria-label={`Fazer upload de som para ${sound.name}`}
+                              disabled={loadingSound !== null || loadingCategory || recordingStatus.isRecording}
+                            >
+                              <Upload className={cn("w-6 h-6", selectedCategory.iconColor)} />
+                            </button>
+                          </>
+                        )}
 
                         {loadingSound === sound.name ? (
                             <Loader2 className={cn("w-8 h-8 flex-shrink-0 animate-spin", selectedCategory.iconColor)} />

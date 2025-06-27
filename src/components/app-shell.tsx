@@ -22,6 +22,7 @@ import {
   HelpCircle,
   BrainCircuit,
   Waves,
+  Settings,
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
@@ -34,6 +35,8 @@ const navItems = [
   { href: '/sound-guesses', label: 'Adivinha com Som', icon: HelpCircle },
   { href: '/personalization', label: 'Personalização IA', icon: BrainCircuit },
 ];
+
+const settingsNavItem = { href: '/settings', label: 'Configurações', icon: Settings };
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -56,7 +59,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <SidebarProvider>
       <Sidebar>
-        <SidebarContent className="p-4 bg-background">
+        <SidebarContent className="p-4 bg-background flex flex-col">
           <SidebarHeader className="p-0 mb-4">
             <Link href="/" className="flex items-center gap-2" aria-label="Página inicial do Antonio Miguel">
               <div className="bg-primary p-2 rounded-lg">
@@ -67,7 +70,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               </h1>
             </Link>
           </SidebarHeader>
-          <SidebarMenu>
+          <SidebarMenu className="flex-1">
             {navItems.map((item) => (
               <SidebarMenuItem key={item.href}>
                 <SidebarMenuButton
@@ -82,6 +85,20 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 </SidebarMenuButton>
               </SidebarMenuItem>
             ))}
+          </SidebarMenu>
+          <SidebarMenu>
+              <SidebarMenuItem key={settingsNavItem.href}>
+                <SidebarMenuButton
+                  asChild
+                  isActive={pathname === settingsNavItem.href}
+                  className="justify-start"
+                >
+                  <Link href={settingsNavItem.href}>
+                    <settingsNavItem.icon />
+                    <span>{settingsNavItem.label}</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
           </SidebarMenu>
         </SidebarContent>
       </Sidebar>
