@@ -135,7 +135,7 @@ function NeonPainting() {
   if (isFullScreen) {
     return (
       <div className="fixed inset-0 bg-black z-50 flex flex-col items-center justify-center animate-in fade-in-20">
-        <audio ref={audioRef} src={pencilSound || ''} />
+        <audio ref={audioRef} src={pencilSound ?? undefined} />
         <div 
           ref={canvasRef}
           onMouseDown={handlePaint}
