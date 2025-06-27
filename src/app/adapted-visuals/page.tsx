@@ -57,8 +57,7 @@ function NeonPainting() {
         if (cachedSound) {
           setPencilSound(cachedSound);
         } else {
-          // A short, crisp sound is better for this interaction
-          const result = await synthesizeSpeech("Som de um clique digital curto e agradável.");
+          const result = await synthesizeSpeech("Som de um lápis escrevendo em papel.");
           if (result.audioDataUri) {
             setPencilSound(result.audioDataUri);
             localStorage.setItem('pencilSound', result.audioDataUri);
@@ -84,20 +83,21 @@ function NeonPainting() {
   const handlePaint = (e: React.MouseEvent<HTMLDivElement> | React.TouchEvent<HTMLDivElement>) => {
     if (!canvasRef.current) return;
     
-    e.preventDefault();
-
     const isTouchEvent = 'touches' in e;
+
+    if (isTouchEvent) {
+        e.preventDefault();
+    }
     
     // For mousemove, only draw if the primary button is pressed. Mousedown and touchstart will always draw.
-    if (!isTouchEvent && e.type === 'mousemove' && e.buttons !== 1) {
+    if (e.type === 'mousemove' && e.buttons !== 1) {
       return;
     }
 
     const canvas = canvasRef.current;
     const rect = canvas.getBoundingClientRect();
     
-    // Get the points that changed in the event
-    const points = isTouchEvent ? Array.from(e.changedTouches) : [e as React.MouseEvent];
+    const points = isTouchEvent ? Array.from((e as React.TouchEvent).touches) : [e as React.MouseEvent];
 
     for (const point of points) {
         const x = point.clientX - rect.left;
@@ -112,7 +112,6 @@ function NeonPainting() {
         canvas.appendChild(dot);
     }
     
-    // Play sound on every paint action. Resetting time allows for rapid playback.
     if (audioRef.current && pencilSound) {
       audioRef.current.currentTime = 0;
       audioRef.current.play().catch(err => console.error("Audio play failed:", err));
@@ -125,13 +124,11 @@ function NeonPainting() {
 
   const closeFullScreen = () => {
     setIsFullScreen(false);
-    // Clear canvas on close to save memory
     if (canvasRef.current) {
         canvasRef.current.innerHTML = '';
     }
   };
 
-  // Fullscreen drawing mode
   if (isFullScreen) {
     return (
       <div className="fixed inset-0 bg-black z-50 flex flex-col items-center justify-center animate-in fade-in-20">
@@ -152,7 +149,6 @@ function NeonPainting() {
     );
   }
 
-  // Placeholder card to launch the fullscreen mode
   return (
     <div className="p-4 bg-secondary rounded-xl text-center">
        <p className="text-center text-muted-foreground mb-4 text-lg">Use o dedo para pintar com cores brilhantes e vibrantes em um fundo escuro.</p>
