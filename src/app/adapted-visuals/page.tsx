@@ -159,14 +159,17 @@ const neonColors = [
 ];
 
 function NeonPainting() {
-  const canvasRef = useRef<HTMLDivElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const contextRef = useRef<CanvasRenderingContext2D | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+
   const [isFullScreen, setIsFullScreen] = useState(false);
+  const [isDrawing, setIsDrawing] = useState(false);
+  
   const [drawingSound, setDrawingSound] = useState<string | null>(null);
   const [isLoadingSound, setIsLoadingSound] = useState(false);
   const { toast } = useToast();
   const [selectedColor, setSelectedColor] = useState(neonColors[0]);
-  const isDrawingRef = useRef(false);
 
   useEffect(() => {
     if (!isFullScreen) return;
@@ -205,45 +208,90 @@ function NeonPainting() {
     generateSound();
   }, [isFullScreen, toast]);
 
-  const startDrawing = (e: React.MouseEvent<HTMLDivElement> | React.TouchEvent<HTMLDivElement>) => {
-    isDrawingRef.current = true;
-    draw(e);
+  useEffect(() => {
+    if (isFullScreen && canvasRef.current) {
+        const canvas = canvasRef.current;
+        if (typeof window !== 'undefined') {
+            const dpr = window.devicePixelRatio || 1;
+            canvas.width = window.innerWidth * dpr;
+            canvas.height = window.innerHeight * dpr;
+            canvas.style.width = `${window.innerWidth}px`;
+            canvas.style.height = `${window.innerHeight}px`;
+
+            const context = canvas.getContext("2d");
+            if(context) {
+              context.scale(dpr, dpr);
+              context.lineCap = "round";
+              context.lineJoin = "round";
+              context.strokeStyle = selectedColor;
+              context.lineWidth = 10;
+              context.shadowColor = selectedColor;
+              context.shadowBlur = 10;
+              contextRef.current = context;
+            }
+        }
+    }
+  }, [isFullScreen]);
+
+  useEffect(() => {
+    if (contextRef.current) {
+      contextRef.current.strokeStyle = selectedColor;
+      contextRef.current.shadowColor = selectedColor;
+    }
+  }, [selectedColor]);
+
+  const getCoords = (e: React.MouseEvent<HTMLElement> | React.TouchEvent<HTMLElement>): { x: number, y: number } | null => {
+      if ('touches' in e && e.touches.length > 0) {
+          return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+      }
+      if ('clientX' in e) {
+          return { x: e.clientX, y: e.clientY };
+      }
+      return null;
+  }
+
+  const startDrawing = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
+      const coords = getCoords(e);
+      if (!coords || !contextRef.current) return;
+      e.preventDefault();
+
+      contextRef.current.beginPath();
+      contextRef.current.moveTo(coords.x, coords.y);
+      setIsDrawing(true);
+
+      if (audioRef.current && drawingSound) {
+        audioRef.current.loop = true;
+        audioRef.current.play().catch(err => console.error("Audio play failed:", err));
+      }
   };
 
   const stopDrawing = () => {
-    isDrawingRef.current = false;
+      if (!contextRef.current) return;
+      contextRef.current.closePath();
+      setIsDrawing(false);
+
+      if (audioRef.current && !audioRef.current.paused) {
+        audioRef.current.loop = false;
+        audioRef.current.pause();
+        audioRef.current.currentTime = 0;
+      }
   };
 
-  const draw = (e: React.MouseEvent<HTMLDivElement> | React.TouchEvent<HTMLDivElement>) => {
-    if (!isDrawingRef.current || !canvasRef.current) return;
-    
-    e.preventDefault();
-
-    const canvas = canvasRef.current;
-    const rect = canvas.getBoundingClientRect();
-    
-    const points = 'touches' in e ? Array.from(e.touches) : [e];
-
-    for (const point of points) {
-        const x = point.clientX - rect.left;
-        const y = point.clientY - rect.top;
-
-        const dot = document.createElement('div');
-        dot.className = 'paint-dot';
-        dot.style.left = `${x}px`;
-        dot.style.top = `${y}px`;
-        dot.style.backgroundColor = selectedColor;
-        dot.style.boxShadow = `0 0 10px ${selectedColor}, 0 0 20px ${selectedColor}`;
-        
-        canvas.appendChild(dot);
-    }
-    
-    if (audioRef.current && drawingSound) {
-      audioRef.current.currentTime = 0;
-      audioRef.current.play().catch(err => console.error("Audio play failed:", err));
-    }
+  const draw = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
+      if (!isDrawing) return;
+      const coords = getCoords(e);
+      if (!coords || !contextRef.current) return;
+      e.preventDefault();
+      
+      contextRef.current.lineTo(coords.x, coords.y);
+      contextRef.current.stroke();
   };
 
+  const clearCanvas = () => {
+    if (canvasRef.current && contextRef.current) {
+        contextRef.current.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+    }
+  }
 
   const openFullScreen = () => {
     setIsFullScreen(true);
@@ -251,33 +299,31 @@ function NeonPainting() {
 
   const closeFullScreen = () => {
     setIsFullScreen(false);
-    if (canvasRef.current) {
-        canvasRef.current.innerHTML = '';
-    }
-    isDrawingRef.current = false;
+    clearCanvas();
+    stopDrawing();
   };
 
   if (isFullScreen) {
     return (
       <div className="fixed inset-0 bg-black z-50 flex flex-col items-center justify-center animate-in fade-in-20">
         <audio ref={audioRef} src={drawingSound ?? undefined} />
-        <div 
-          ref={canvasRef}
-          onMouseDown={startDrawing}
-          onMouseUp={stopDrawing}
-          onMouseLeave={stopDrawing}
-          onMouseMove={draw}
-          onTouchStart={startDrawing}
-          onTouchEnd={stopDrawing}
-          onTouchCancel={stopDrawing}
-          onTouchMove={draw}
-          className="w-full h-full cursor-crosshair"
-          aria-label="Área de pintura neon em tela cheia"
+        <canvas
+            ref={canvasRef}
+            onMouseDown={startDrawing}
+            onMouseUp={stopDrawing}
+            onMouseLeave={stopDrawing}
+            onMouseMove={draw}
+            onTouchStart={startDrawing}
+            onTouchEnd={stopDrawing}
+            onTouchCancel={stopDrawing}
+            onTouchMove={draw}
+            className="absolute top-0 left-0 w-full h-full cursor-crosshair"
+            aria-label="Área de pintura neon em tela cheia"
         />
         <Button onClick={closeFullScreen} variant="secondary" className="absolute top-4 right-4 z-10">
           <X className="mr-2" /> Fechar
         </Button>
-        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-gray-900/60 backdrop-blur-sm p-2 rounded-full flex gap-3 shadow-lg">
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-gray-900/60 backdrop-blur-sm p-2 rounded-full flex gap-3 shadow-lg z-10">
           {neonColors.map((color) => (
             <button
               key={color}
@@ -318,16 +364,6 @@ function NeonPainting() {
             <p className="text-muted-foreground">Toque aqui para começar a desenhar em tela cheia.</p>
          </div>
        </div>
-       <style jsx>{`
-        .paint-dot {
-            position: absolute;
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            transform: translate(-50%, -50%);
-            pointer-events: none;
-        }
-       `}</style>
     </div>
   );
 }
