@@ -1,4 +1,3 @@
-
 'use client';
 import { FeatureCard } from '@/components/feature-card';
 import { Button } from '@/components/ui/button';
@@ -39,6 +38,15 @@ function FollowTheLightGame() {
   );
 }
 
+const neonColors = [
+  'hsl(330, 100%, 70%)',
+  'hsl(60, 100%, 70%)',
+  'hsl(210, 100%, 70%)',
+  'hsl(120, 100%, 70%)',
+  'hsl(30, 100%, 70%)',
+  'hsl(0, 0%, 100%)',
+];
+
 function NeonPainting() {
   const canvasRef = useRef<HTMLDivElement>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -46,6 +54,7 @@ function NeonPainting() {
   const [drawingSound, setDrawingSound] = useState<string | null>(null);
   const [isLoadingSound, setIsLoadingSound] = useState(false);
   const { toast } = useToast();
+  const [selectedColor, setSelectedColor] = useState(neonColors[0]);
 
   useEffect(() => {
     // Only load sound when entering fullscreen mode
@@ -108,7 +117,8 @@ function NeonPainting() {
         dot.className = 'paint-dot';
         dot.style.left = `${x}px`;
         dot.style.top = `${y}px`;
-        dot.style.backgroundColor = `hsl(${Math.random() * 360}, 100%, 70%)`;
+        dot.style.backgroundColor = selectedColor;
+        dot.style.boxShadow = `0 0 10px ${selectedColor}, 0 0 20px ${selectedColor}`;
         
         canvas.appendChild(dot);
     }
@@ -146,6 +156,26 @@ function NeonPainting() {
         <Button onClick={closeFullScreen} variant="secondary" className="absolute top-4 right-4 z-10">
           <X className="mr-2" /> Fechar
         </Button>
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-gray-900/60 backdrop-blur-sm p-2 rounded-full flex gap-3 shadow-lg">
+          {neonColors.map((color) => (
+            <button
+              key={color}
+              onClick={(e) => {
+                e.stopPropagation();
+                setSelectedColor(color);
+              }}
+              className={cn(
+                "w-12 h-12 rounded-full border-4 transition-transform duration-200",
+                selectedColor === color ? "border-white scale-110" : "border-transparent hover:scale-105"
+              )}
+              style={{ 
+                backgroundColor: color,
+                boxShadow: `0 0 10px ${color}`
+              }}
+              aria-label={`Selecionar cor ${color}`}
+            />
+          ))}
+        </div>
       </div>
     );
   }
@@ -175,7 +205,6 @@ function NeonPainting() {
             border-radius: 50%;
             transform: translate(-50%, -50%);
             pointer-events: none;
-            box-shadow: 0 0 10px currentColor, 0 0 20px currentColor;
         }
        `}</style>
     </div>
