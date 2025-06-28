@@ -1,7 +1,7 @@
 'use client';
 import { FeatureCard } from '@/components/feature-card';
 import { Button } from '@/components/ui/button';
-import { Palette, TrendingUp, X, Trash2 } from 'lucide-react';
+import { Palette, TrendingUp, X, Trash2, Rocket } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { useSettings } from '@/context/settings-context';
@@ -360,6 +360,194 @@ function NeonPainting() {
   );
 }
 
+
+// Helper for random numbers
+const random = (min: number, max: number) => Math.random() * (max - min) + min;
+
+// Particle class for fireworks effect
+class Particle {
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  alpha: number;
+  color: string;
+  gravity: number = 0.2;
+  friction: number = 0.98;
+
+  constructor(x: number, y: number, color: string) {
+    this.x = x;
+    this.y = y;
+    const angle = random(0, Math.PI * 2);
+    const speed = random(1, 10);
+    this.vx = Math.cos(angle) * speed;
+    this.vy = Math.sin(angle) * speed;
+    this.alpha = 1;
+    this.color = color;
+  }
+
+  update() {
+    this.vx *= this.friction;
+    this.vy *= this.friction;
+    this.vy += this.gravity;
+    this.x += this.vx;
+    this.y += this.vy;
+    this.alpha -= 0.02;
+  }
+
+  draw(ctx: CanvasRenderingContext2D) {
+    ctx.save();
+    ctx.globalAlpha = this.alpha;
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, 2, 0, Math.PI * 2, false);
+    ctx.fillStyle = this.color;
+    ctx.fill();
+    ctx.restore();
+  }
+}
+
+function FireworksGame() {
+  const [isFullScreen, setIsFullScreen] = useState(false);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const [fireworksSound, setFireworksSound] = useState<string | null>(null);
+  const { toast } = useToast();
+  const { loadSound } = useSettings();
+  const particlesRef = useRef<Particle[]>([]);
+
+  useEffect(() => {
+    if (!isFullScreen) return;
+
+    const generateSound = async () => {
+      try {
+        const soundUri = await loadSound(
+            'fireworks-sound',
+            "O som de fogos de artifício explodindo no céu, com um assobio e uma explosão."
+        );
+        setFireworksSound(soundUri);
+      } catch (error) {
+        console.error('Error loading fireworks sound:', error);
+        toast({
+          variant: 'destructive',
+          title: 'Erro ao carregar som',
+          description: 'Não foi possível carregar o som dos fogos. Tente novamente.',
+        });
+      }
+    };
+    generateSound();
+  }, [isFullScreen, loadSound, toast]);
+
+  useEffect(() => {
+    if (!isFullScreen || !canvasRef.current) return;
+
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    if (typeof window !== 'undefined') {
+        const dpr = window.devicePixelRatio || 1;
+        canvas.width = window.innerWidth * dpr;
+        canvas.height = window.innerHeight * dpr;
+        canvas.style.width = `${window.innerWidth}px`;
+        canvas.style.height = `${window.innerHeight}px`;
+        ctx.scale(dpr, dpr);
+    }
+
+    let animationFrameId: number;
+    const animate = () => {
+        if (ctx) {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
+            ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+            
+            particlesRef.current.forEach((p, index) => {
+                p.update();
+                p.draw(ctx);
+                if (p.alpha <= 0) {
+                    particlesRef.current.splice(index, 1);
+                }
+            });
+        }
+        animationFrameId = requestAnimationFrame(animate);
+    };
+
+    animate();
+
+    return () => {
+        cancelAnimationFrame(animationFrameId);
+        particlesRef.current = [];
+    };
+  }, [isFullScreen]);
+
+  const createFireworks = (x: number, y: number) => {
+    const particleCount = 100;
+    const hue = random(0, 360);
+
+    for (let i = 0; i < particleCount; i++) {
+        const color = `hsl(${hue}, 100%, 70%)`;
+        particlesRef.current.push(new Particle(x, y, color));
+    }
+
+    if (fireworksSound) {
+        const audio = new Audio(fireworksSound);
+        audio.play().catch(err => console.error("Audio play failed:", err));
+    }
+  };
+
+  const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    createFireworks(e.clientX, e.clientY);
+  };
+  
+  const handleTouch = (e: React.TouchEvent<HTMLDivElement>) => {
+      if (e.touches.length > 0) {
+        e.preventDefault();
+        createFireworks(e.touches[0].clientX, e.touches[0].clientY);
+      }
+  };
+
+  const openFullScreen = () => setIsFullScreen(true);
+  const closeFullScreen = () => {
+      setIsFullScreen(false);
+      particlesRef.current = [];
+  };
+
+  if (isFullScreen) {
+    return (
+      <div 
+        className="fixed inset-0 bg-black z-50 cursor-pointer"
+        onClick={handleClick}
+        onTouchStart={handleTouch}
+      >
+        <canvas ref={canvasRef} className="absolute top-0 left-0 w-full h-full" aria-label="Área de fogos de artifício em tela cheia" />
+        <Button 
+            onClick={(e) => { e.stopPropagation(); closeFullScreen(); }} 
+            variant="secondary" 
+            className="absolute top-4 right-4 z-10"
+        >
+          <X className="mr-2" /> Fechar
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="p-4 bg-secondary rounded-xl text-center">
+       <div 
+         className="relative w-full h-64 bg-black rounded-lg cursor-pointer overflow-hidden flex items-center justify-center group"
+         onClick={openFullScreen}
+         onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') openFullScreen(); }}
+         role="button"
+         tabIndex={0}
+         aria-label="Abrir Fogos de Artifício em tela cheia"
+       >
+         <div className="text-center text-white p-4">
+            <Rocket size={48} className="mx-auto mb-4 text-primary transition-transform group-hover:scale-110" />
+            <p className="font-bold text-xl">Abrir Fogos de Artifício</p>
+            <p className="text-muted-foreground">Toque para começar a festa de luzes.</p>
+         </div>
+       </div>
+    </div>
+  );
+}
+
 export default function AdaptedVisualsPage() {
   return (
     <div className="w-full">
@@ -383,6 +571,13 @@ export default function AdaptedVisualsPage() {
           icon={Palette}
         >
           <NeonPainting />
+        </FeatureCard>
+         <FeatureCard
+          title="Fogos de Artifício"
+          description="Toque na tela para criar explosões de luz e cor com sons divertidos."
+          icon={Rocket}
+        >
+          <FireworksGame />
         </FeatureCard>
       </div>
     </div>

@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Mic, Upload, Waves, Palette, Leaf, Cat, Car, Music as MusicIcon, Smile, StopCircle } from 'lucide-react';
+import { Mic, Upload, Waves, Palette, Leaf, Cat, Car, Music as MusicIcon, Smile, StopCircle, Rocket } from 'lucide-react';
 import type { Icon as LucideIcon } from 'lucide-react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Button, buttonVariants } from '@/components/ui/button';
@@ -88,6 +88,11 @@ const soundModules = [
                 key: 'drawing-sound',
                 label: 'Som de "Pintura Neon"',
                 description: 'O som emitido ao desenhar na atividade "Pintura Neon".',
+            },
+            {
+                key: 'fireworks-sound',
+                label: 'Som de "Fogos de Artifício"',
+                description: 'O som de explosão ao tocar na tela na atividade de Fogos de Artifício.',
             }
         ]
     }
