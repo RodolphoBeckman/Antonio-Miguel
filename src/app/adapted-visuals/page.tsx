@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Palette, TrendingUp, X, Trash2 } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import { cn } from '@/lib/utils';
-import { synthesizeSpeech } from '@/ai/flows/synthesize-speech';
+import { useSettings } from '@/context/settings-context';
 import { useToast } from '@/hooks/use-toast';
 
 function FollowTheLightGame() {
@@ -15,6 +15,7 @@ function FollowTheLightGame() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const soundIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const { toast } = useToast();
+  const { loadSound } = useSettings();
 
   useEffect(() => {
     if (!isFullScreen) {
@@ -29,24 +30,13 @@ function FollowTheLightGame() {
     const generateSound = async () => {
       setIsLoadingSound(true);
       try {
-        const cachedSound = localStorage.getItem('followLightSoundCache');
-        if (cachedSound) {
-          setGameSound(cachedSound);
-        } else {
-          const result = await synthesizeSpeech("Uma única nota de xilofone, tocada de forma suave e com eco, criando um som mágico.");
-          if (result.audioDataUri) {
-            setGameSound(result.audioDataUri);
-            try {
-              localStorage.setItem('followLightSoundCache', result.audioDataUri);
-            } catch (error) {
-              console.warn('Failed to cache game sound:', error);
-            }
-          } else {
-            throw new Error("Não foi possível gerar o áudio do jogo.");
-          }
-        }
+        const soundUri = await loadSound(
+            'follow-light-sound',
+            "Uma única nota de xilofone, tocada de forma suave e com eco, criando um som mágico."
+        );
+        setGameSound(soundUri);
       } catch (error) {
-        console.error('Error generating game sound:', error);
+        console.error('Error loading game sound:', error);
         toast({
           variant: 'destructive',
           title: 'Erro ao carregar som',
@@ -64,7 +54,7 @@ function FollowTheLightGame() {
         clearInterval(soundIntervalRef.current);
       }
     };
-  }, [isFullScreen, toast]);
+  }, [isFullScreen, loadSound, toast]);
 
   useEffect(() => {
     if (isPlaying && gameSound) {
@@ -169,6 +159,7 @@ function NeonPainting() {
   const [drawingSound, setDrawingSound] = useState<string | null>(null);
   const [isLoadingSound, setIsLoadingSound] = useState(false);
   const { toast } = useToast();
+  const { loadSound } = useSettings();
   const [selectedColor, setSelectedColor] = useState(neonColors[0]);
 
   useEffect(() => {
@@ -177,24 +168,13 @@ function NeonPainting() {
     const generateSound = async () => {
       setIsLoadingSound(true);
       try {
-        const cachedSound = localStorage.getItem('drawingSoundCache');
-        if (cachedSound) {
-          setDrawingSound(cachedSound);
-        } else {
-          const result = await synthesizeSpeech("O som de um giz de cera riscando suavemente sobre uma folha de papel.");
-          if (result.audioDataUri) {
-            setDrawingSound(result.audioDataUri);
-            try {
-              localStorage.setItem('drawingSoundCache', result.audioDataUri);
-            } catch (error) {
-              console.warn('Failed to cache drawing sound:', error);
-            }
-          } else {
-            throw new Error("Não foi possível gerar o áudio.");
-          }
-        }
+        const soundUri = await loadSound(
+            'drawing-sound',
+            "O som de um giz de cera riscando suavemente sobre uma folha de papel."
+        );
+        setDrawingSound(soundUri);
       } catch (error) {
-        console.error('Error generating drawing sound:', error);
+        console.error('Error loading drawing sound:', error);
         toast({
           variant: 'destructive',
           title: 'Erro ao carregar som',
@@ -206,7 +186,7 @@ function NeonPainting() {
     };
 
     generateSound();
-  }, [isFullScreen, toast]);
+  }, [isFullScreen, loadSound, toast]);
 
   useEffect(() => {
     if (isFullScreen && canvasRef.current) {
@@ -231,7 +211,7 @@ function NeonPainting() {
             }
         }
     }
-  }, [isFullScreen]);
+  }, [isFullScreen, selectedColor]);
 
   useEffect(() => {
     if (contextRef.current) {
@@ -289,7 +269,8 @@ function NeonPainting() {
 
   const clearCanvas = () => {
     if (canvasRef.current && contextRef.current) {
-        contextRef.current.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+        const context = contextRef.current;
+        context.clearRect(0, 0, context.canvas.width, context.canvas.height);
     }
   }
 

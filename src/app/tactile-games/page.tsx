@@ -4,7 +4,7 @@ import { FeatureCard } from '@/components/feature-card';
 import { Button } from '@/components/ui/button';
 import { Move, Waves } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
-import { synthesizeSpeech } from '@/ai/flows/synthesize-speech';
+import { useSettings } from '@/context/settings-context';
 import { useToast } from '@/hooks/use-toast';
 
 const drawingInstructions = [
@@ -43,28 +43,19 @@ function TouchTheSoundGame() {
   const [isLoading, setIsLoading] = useState(true);
   const [playingIndex, setPlayingIndex] = useState<number | null>(null);
   const { toast } = useToast();
+  const { loadSound } = useSettings();
 
   useEffect(() => {
     const generateSound = async () => {
+      setIsLoading(true);
       try {
-        const cachedSound = localStorage.getItem('touchGameSound');
-        if (cachedSound) {
-          setTouchSound(cachedSound);
-        } else {
-          const result = await synthesizeSpeech("Som de um clique digital curto e agradável.");
-          if (result.audioDataUri) {
-            setTouchSound(result.audioDataUri);
-            try {
-              localStorage.setItem('touchGameSound', result.audioDataUri);
-            } catch (error) {
-              console.warn('Failed to cache touch sound:', error);
-            }
-          } else {
-            throw new Error("Não foi possível gerar o áudio do toque.");
-          }
-        }
+        const soundUri = await loadSound(
+            'touch-game-sound', 
+            "Som de um clique digital curto e agradável."
+        );
+        setTouchSound(soundUri);
       } catch (error) {
-        console.error('Error generating touch sound:', error);
+        console.error('Error loading touch sound:', error);
         toast({
           variant: 'destructive',
           title: 'Erro ao gerar som',
@@ -76,7 +67,7 @@ function TouchTheSoundGame() {
     };
 
     generateSound();
-  }, [toast]);
+  }, [loadSound, toast]);
 
   const handleTouch = (index: number) => {
     if (typeof window !== 'undefined' && window.navigator?.vibrate) {

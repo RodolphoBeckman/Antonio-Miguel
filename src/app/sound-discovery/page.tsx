@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import {
   Leaf,
   Cat,
@@ -19,7 +19,6 @@ import {
 } from 'lucide-react';
 import type { Icon as LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { synthesizeSpeech } from '@/ai/flows/synthesize-speech';
 import { useToast } from "@/hooks/use-toast";
 import { useSettings } from '@/context/settings-context';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -118,35 +117,16 @@ const blobToBase64 = (blob: Blob): Promise<string> => {
 };
 
 export default function SoundDiscoveryPage() {
-  const { isCustomAudioEnabled, isInitialized } = useSettings();
+  const { isCustomAudioEnabled, isInitialized, loadSound, setSound } = useSettings();
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [playingSound, setPlayingSound] = useState<string | null>(null);
   const [loadingSound, setLoadingSound] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const [audioCache, setAudioCache] = useState<Record<string, string>>({});
   const { toast } = useToast();
 
-  const [customAudio, setCustomAudio] = useState<Record<string, string>>({});
   const [recordingStatus, setRecordingStatus] = useState<{ soundName: string | null, isRecording: boolean }>({ soundName: null, isRecording: false });
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
-
-  useEffect(() => {
-    try {
-      const storedCache = localStorage.getItem('audioCache');
-      if (storedCache) {
-        setAudioCache(JSON.parse(storedCache));
-      }
-      const storedCustomAudio = localStorage.getItem('customAudio');
-      if (storedCustomAudio) {
-        setCustomAudio(JSON.parse(storedCustomAudio));
-      }
-    } catch (error) {
-      console.error("Failed to load cache from localStorage", error);
-      localStorage.removeItem('audioCache');
-      localStorage.removeItem('customAudio');
-    }
-  }, []);
 
   const handleSelectCategory = (category: Category) => {
     setSelectedCategory(category);
@@ -172,49 +152,22 @@ export default function SoundDiscoveryPage() {
     }
 
     setPlayingSound(null);
+    setLoadingSound(soundName);
 
-    const customAudioUrl = customAudio[soundName];
-    if (isCustomAudioEnabled && customAudioUrl) {
-      if (audioRef.current) {
-        audioRef.current.src = customAudioUrl;
-        audioRef.current.play().catch((e) => console.error('Error playing custom audio:', e));
-        setPlayingSound(soundName);
-      }
-      return;
-    }
-    
     try {
-      let audioDataUri = audioCache[soundName];
-
-      if (!audioDataUri) {
-        setLoadingSound(soundName);
-        const result = await synthesizeSpeech(soundPrompt);
-        audioDataUri = result.audioDataUri;
-        const newCache = { ...audioCache, [soundName]: audioDataUri };
-        setAudioCache(newCache);
-        try {
-            localStorage.setItem('audioCache', JSON.stringify(newCache));
-        } catch (e) {
-            console.warn("Could not save audio cache to localStorage. Storage might be full.", e);
-            toast({
-              variant: "destructive",
-              title: "Erro de Armazenamento",
-              description: "Não foi possível salvar o som. O armazenamento pode estar cheio.",
-            });
-        }
-      }
-
+      const soundKey = `discovery-${soundName.toLowerCase().replace(/\s/g, '-')}`;
+      const audioDataUri = await loadSound(soundKey, soundPrompt);
       if (audioRef.current && audioDataUri) {
         audioRef.current.src = audioDataUri;
-        audioRef.current.play().catch((e) => console.error('Error playing AI audio:', e));
+        audioRef.current.play().catch((e) => console.error('Error playing audio:', e));
         setPlayingSound(soundName);
       }
     } catch (error) {
-      console.error('Error synthesizing speech:', error);
+      console.error('Error loading or playing sound:', error);
       toast({
         variant: "destructive",
         title: "Erro ao Tocar Som",
-        description: "Não foi possível gerar o áudio. Tente novamente.",
+        description: "Não foi possível gerar ou reproduzir o áudio. Tente novamente.",
       })
     } finally {
       setLoadingSound(null);
@@ -240,13 +193,12 @@ export default function SoundDiscoveryPage() {
         recorder.onstop = async () => {
             const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
             const audioUrl = await blobToBase64(audioBlob);
-            const newCustomAudio = { ...customAudio, [soundName]: audioUrl };
-            setCustomAudio(newCustomAudio);
+            const soundKey = `discovery-${soundName.toLowerCase().replace(/\s/g, '-')}`;
             try {
-              localStorage.setItem('customAudio', JSON.stringify(newCustomAudio));
+              setSound(soundKey, audioUrl);
               toast({ title: "Gravação Salva!", description: "Seu áudio foi salvo com sucesso."});
             } catch (e) {
-              console.warn("Could not save custom audio to localStorage. Storage might be full.", e);
+              console.warn("Could not save custom audio.", e);
               toast({
                 variant: "destructive",
                 title: "Erro de Armazenamento",
@@ -289,17 +241,16 @@ export default function SoundDiscoveryPage() {
     const file = e.target.files?.[0];
     if (file && soundName) {
       if (file.type.startsWith('audio/')) {
-        const audioUrl = await blobToBase64(file);
-        const newCustomAudio = { ...customAudio, [soundName]: audioUrl };
-        setCustomAudio(newCustomAudio);
         try {
-          localStorage.setItem('customAudio', JSON.stringify(newCustomAudio));
+          const audioUrl = await blobToBase64(file);
+          const soundKey = `discovery-${soundName.toLowerCase().replace(/\s/g, '-')}`;
+          setSound(soundKey, audioUrl);
           toast({
             title: "Upload Concluído!",
             description: "Seu áudio foi carregado com sucesso.",
           });
         } catch (e) {
-          console.warn("Could not save custom audio to localStorage.", e);
+          console.warn("Could not save custom audio.", e);
           toast({
             variant: "destructive",
             title: "Erro de Armazenamento",
@@ -320,9 +271,9 @@ export default function SoundDiscoveryPage() {
   if (!isInitialized) {
     return (
         <div className="w-full">
-            <div className="mb-8">
-                <Skeleton className="h-12 w-3/4 mb-3" />
-                <Skeleton className="h-7 w-1/2" />
+            <div className="mb-8 text-center">
+                <Skeleton className="h-10 w-3/4 mx-auto" />
+                <Skeleton className="h-7 w-1/2 mx-auto mt-3" />
             </div>
             <div className="flex flex-col gap-4">
                 {[...Array(5)].map((_, i) => (
@@ -417,25 +368,26 @@ export default function SoundDiscoveryPage() {
 
                           <label
                             htmlFor={isUploadDisabled ? undefined : uploadInputId}
-                            onClick={(e) => e.stopPropagation()}
                             className={cn(
                                 "p-3 rounded-full transition-colors",
                                 isUploadDisabled
-                                ? "opacity-50 cursor-not-allowed"
+                                ? "opacity-50"
                                 : "cursor-pointer hover:bg-white/10"
                             )}
+                            onClick={(e) => e.stopPropagation()}
                             aria-label={`Fazer upload de som para ${sound.name}`}
                           >
                             <Upload className={cn("w-8 h-8", selectedCategory.iconColor)} />
+                             <input
+                                id={uploadInputId}
+                                type="file"
+                                className="hidden"
+                                accept="audio/*"
+                                onChange={(e) => handleFileChange(e, sound.name)}
+                                disabled={isUploadDisabled}
+                                onClick={(e) => e.stopPropagation()}
+                              />
                           </label>
-                          <input
-                            id={uploadInputId}
-                            type="file"
-                            className="hidden"
-                            accept="audio/*"
-                            onChange={(e) => handleFileChange(e, sound.name)}
-                            disabled={isUploadDisabled}
-                          />
                         </>
                       )}
 
