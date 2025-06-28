@@ -1,12 +1,12 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useRef } from 'react';
 import { useSettings } from '@/context/settings-context';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Mic, Upload, Waves, Palette, Leaf, Cat, Car, Music as MusicIcon, Smile } from 'lucide-react';
+import { Mic, Upload, Waves, Palette, Leaf, Cat, Car, Music as MusicIcon, Smile, StopCircle } from 'lucide-react';
 import type { Icon as LucideIcon } from 'lucide-react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Button, buttonVariants } from '@/components/ui/button';
@@ -102,10 +102,14 @@ const blobToBase64 = (blob: Blob): Promise<string> => {
   });
 };
 
-function AudioUploadControl({ soundKey, label, description }: { soundKey: string, label: string, description?: string }) {
+function AudioManagementControl({ soundKey, label, description }: { soundKey: string, label: string, description?: string }) {
     const { setSound } = useSettings();
     const { toast } = useToast();
     const uploadInputId = `upload-input-settings-${soundKey}`;
+
+    const [isRecording, setIsRecording] = useState(false);
+    const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+    const audioChunksRef = useRef<Blob[]>([]);
 
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -122,23 +126,94 @@ function AudioUploadControl({ soundKey, label, description }: { soundKey: string
                 toast({ variant: "destructive", title: "Arquivo Inválido", description: "Por favor, selecione um arquivo de áudio." });
             }
         }
-        if(e.target) e.target.value = ''; // Reset input to allow re-uploading the same file
+        if(e.target) e.target.value = '';
+    };
+
+    const startRecording = async () => {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            
+            const recorder = new MediaRecorder(stream);
+            mediaRecorderRef.current = recorder;
+            audioChunksRef.current = [];
+    
+            recorder.ondataavailable = (event) => {
+                audioChunksRef.current.push(event.data);
+            };
+    
+            recorder.onstop = async () => {
+                const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+                const audioUrl = await blobToBase64(audioBlob);
+                try {
+                  setSound(soundKey, audioUrl);
+                  toast({ title: "Gravação Salva!", description: "Seu áudio foi salvo com sucesso."});
+                } catch (e) {
+                  console.warn("Could not save custom audio.", e);
+                  toast({
+                    variant: "destructive",
+                    title: "Erro de Armazenamento",
+                    description: "Não foi possível salvar sua gravação. O armazenamento pode estar cheio.",
+                  });
+                }
+                stream.getTracks().forEach(track => track.stop());
+            };
+            
+            recorder.start();
+            setIsRecording(true);
+    
+        } catch (err) {
+            console.error("Error accessing microphone:", err);
+            toast({
+                variant: "destructive",
+                title: "Acesso ao Microfone Negado",
+                description: "Por favor, permita o acesso ao microfone nas configurações do seu navegador.",
+            });
+        }
+    };
+
+    const stopRecording = () => {
+        if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+            mediaRecorderRef.current.stop();
+            setIsRecording(false);
+        }
+    };
+    
+    const handleRecordClick = () => {
+        if (isRecording) {
+            stopRecording();
+        } else {
+            startRecording();
+        }
     };
 
     return (
         <div className="p-4 rounded-lg bg-secondary/50">
             <h4 className="font-bold text-secondary-foreground">{label}</h4>
             {description && <p className="text-sm text-muted-foreground mb-3">{description}</p>}
-            <label htmlFor={uploadInputId} className={cn(buttonVariants({ variant: 'outline' }), "cursor-pointer")}>
-                <Upload className="mr-2 h-4 w-4" /> Fazer Upload
-            </label>
-            <input
-                id={uploadInputId}
-                type="file"
-                className="hidden"
-                accept="audio/*"
-                onChange={handleFileChange}
-            />
+            <div className="flex items-center gap-2 flex-wrap">
+                <label htmlFor={uploadInputId} className={cn(buttonVariants({ variant: 'outline' }), "cursor-pointer")}>
+                    <Upload className="mr-2 h-4 w-4" /> Fazer Upload
+                </label>
+                <input
+                    id={uploadInputId}
+                    type="file"
+                    className="hidden"
+                    accept="audio/*"
+                    onChange={handleFileChange}
+                />
+                <Button variant="outline" onClick={handleRecordClick}>
+                    {isRecording ? (
+                        <>
+                           <StopCircle className="mr-2 h-4 w-4 text-red-500 animate-pulse" />
+                           Parar Gravação
+                        </>
+                    ) : (
+                        <>
+                           <Mic className="mr-2 h-4 w-4" /> Gravar Áudio
+                        </>
+                    )}
+                </Button>
+            </div>
         </div>
     );
 }
@@ -196,7 +271,7 @@ export default function SettingsPage() {
                 <CardHeader>
                     <CardTitle>Gerenciar Sons</CardTitle>
                     <CardDescription>
-                    Faça o upload de arquivos de áudio para substituir os sons padrão do aplicativo.
+                    Grave um novo áudio ou faça o upload de um arquivo para substituir os sons padrão do aplicativo.
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -211,7 +286,7 @@ export default function SettingsPage() {
                                 </AccordionTrigger>
                                 <AccordionContent className="space-y-4 pt-4">
                                     {module.sounds.map(sound => (
-                                        <AudioUploadControl 
+                                        <AudioManagementControl 
                                             key={sound.key}
                                             soundKey={sound.key}
                                             label={sound.label}
@@ -231,7 +306,7 @@ export default function SettingsPage() {
                                 </AccordionTrigger>
                                 <AccordionContent className="space-y-4 pt-4">
                                     {category.sounds.map(sound => (
-                                        <AudioUploadControl 
+                                        <AudioManagementControl 
                                             key={sound.name}
                                             soundKey={`discovery-${sound.name.toLowerCase().replace(/\s/g, '-')}`}
                                             label={sound.name}
